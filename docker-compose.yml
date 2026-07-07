@@ -1,0 +1,7 @@
+version: "3.9"
+
+services:
+  app:
+    image: placeholder
+
+# Docker configuration will be added in future phases.

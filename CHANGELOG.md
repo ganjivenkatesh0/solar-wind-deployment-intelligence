@@ -23,6 +23,37 @@ All notable changes to this project will be documented in this file.
 - Database design
 
 ---
+
+# Day 4 - 03 July 2026
+
+## Added
+
+- Dataset Summary documentation.
+- Initial Database Design documentation.
+- Module Responsibility Mapping.
+- Weekly Notes for Day 4.
+
+## Updated
+
+- README.md
+- Project documentation.
+
+## Verified
+
+- Development environment.
+- Backend workspace.
+- Frontend workspace.
+- Project folder organization.
+
+## Pending
+
+- Dataset download.
+- Dataset exploration.
+- PostgreSQL implementation.
+- API implementation.
+- Frontend development.
+- Machine Learning model development.
+
 ---
 
 ## Day 2 - 01 July 2026

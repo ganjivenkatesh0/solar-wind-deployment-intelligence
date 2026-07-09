@@ -199,6 +199,43 @@ The workflow includes:
 
 ---
 
+# Day 2 Progress (01 July 2026)
+
+## Session Topic
+
+Project Folder Structure & Dataset Analysis
+
+## Objectives Completed
+
+- Verified the complete project folder structure.
+- Reviewed the backend architecture.
+- Understood the purpose of all renewable energy datasets.
+- Created architecture documentation for the project.
+- Verified the Git repository and project structure.
+- Prepared the project for future dataset integration.
+
+## Dataset Planning
+
+The following datasets have been identified for use in the project:
+
+- NASA POWER
+- Global Wind Atlas
+- Sentinel-2
+- OpenStreetMap (OSM)
+- SRTM
+
+Due to limited internet availability, dataset downloads have been postponed. The datasets will be downloaded and analyzed once a stable Wi-Fi connection is available.
+
+## Project Status
+
+- Day 1: Completed
+- Day 2: Architecture and planning completed
+- Dataset download: Pending
+- Dataset analysis: Pending
+- AI model development: Upcoming
+
+---
+
 ## DevOps (Upcoming)
 
 - Docker
@@ -645,11 +682,31 @@ Each internship day follows this workflow to ensure continuous learning, clean c
 | Day | Status |
 |------|--------|
 | Day 1 | ✅ Completed |
-| Day 2 | ⏳ Pending |
+| Day 2 | ✅ Completed |
 | Day 3 | ⏳ Pending |
 | Day 4 | ⏳ Pending |
 | Day 5 | ⏳ Pending |
 | Day 6 | ⏳ Pending |
+
+---
+
+## Day 2 Progress
+
+### Completed
+- Verified complete project structure.
+- Verified backend architecture.
+- Created architecture documentation.
+- Documented project workflow.
+- Documented dataset purposes.
+- Prepared dataset folders.
+
+### Pending
+- Download NASA POWER dataset.
+- Download Global Wind Atlas dataset.
+- Download Sentinel-2 dataset.
+- Download OpenStreetMap dataset.
+- Download SRTM dataset.
+- Perform dataset analysis after download.
 
 ---
 

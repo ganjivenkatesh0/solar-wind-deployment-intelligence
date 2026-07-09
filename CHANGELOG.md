@@ -2,202 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is inspired by **Keep a Changelog** and follows **Semantic Versioning (SemVer)** principles.
+---
+
+## Day 2 - 01 July 2026
+
+### Added
+
+- Architecture documentation.
+- Dataset planning documentation.
+- Project mapping documentation.
+- System workflow documentation.
+
+### Verified
+
+- Backend folder structure.
+- Dataset folder organization.
+- Project documentation structure.
+- Git repository synchronization.
+
+### Pending
+
+- Download NASA POWER dataset.
+- Download Global Wind Atlas dataset.
+- Download Sentinel-2 dataset.
+- Download OpenStreetMap dataset.
+- Download SRTM dataset.
+- Perform Exploratory Data Analysis (EDA).
+- Build preprocessing pipeline.
 
 ---
 
-# [v0.1.0] - Day 1 - Development Environment & Project Initialization
+## Day 1 - 30 June 2026
 
-**Date:** 07 July 2026
+### Added
 
----
+- Project initialization.
+- Professional folder structure.
+- FastAPI backend setup.
+- Git repository initialization.
+- GitHub integration.
+- Project documentation.
 
-## Overview
-
-This marks the initial setup of the **Solar & Wind Deployment Intelligence Platform** developed as part of the Infosys Springboard Virtual Internship.
-
-The focus of Day 1 was to prepare a professional development environment, establish the project structure, configure version control, and install the core backend framework.
-
----
-
-## Added
-
-### Development Environment
-
-- Installed Python 3.14
-- Installed Git
-- Installed Visual Studio Code
-- Verified Python installation
-- Verified Git installation
-- Verified pip installation
-
----
-
-### Project Initialization
-
-- Created project root directory
-- Initialized Git repository
-- Renamed default branch to **main**
-- Created professional project folder structure
-
----
-
-### Backend Structure
-
-Created the following backend modules:
-
-- backend/
-- backend/app/
-- backend/app/api/
-- backend/app/auth/
-- backend/app/database/
-- backend/app/models/
-- backend/app/schemas/
-- backend/app/services/
-- backend/app/utils/
-- backend/app/main.py
-
----
-
-### Frontend Structure
-
-Created frontend directory structure.
-
-- frontend/
-- frontend/public/
-- frontend/src/
-- frontend/src/assets/
-- frontend/src/components/
-- frontend/src/pages/
-- frontend/src/services/
-
----
-
-### Dataset Organization
-
-Prepared dataset directories.
-
-- NASA POWER
-- Global Wind Atlas
-- Sentinel
-- OpenStreetMap
-- SRTM
-
----
-
-### Documentation
-
-Created documentation structure.
-
-- Architecture
-- API Documentation
-- Database Design
-- Setup Documentation
-- Weekly Notes
-
----
-
-### Project Files
-
-Created:
-
-- README.md
-- CHANGELOG.md
-- LICENSE
-- .gitignore
-- docker-compose.yml
-- requirements.txt
-
----
-
-### Python Environment
-
-Created isolated virtual environment.
-
-```bash
-python -m venv .venv
-```
-
-Activated virtual environment.
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
----
-
-### Package Installation
-
-Updated pip.
-
-```bash
-python -m pip install --upgrade pip
-```
-
-Installed backend dependencies.
-
-```bash
-pip install fastapi uvicorn
-```
-
-Generated dependency file.
-
-```bash
-pip freeze > requirements.txt
-```
-
----
-
-## Installed Packages
-
-- FastAPI
-- Uvicorn
-- Pydantic
-- Starlette
-- AnyIO
-- Click
-- H11
-- Typing Extensions
-- Annotated Types
-
----
-
-## Version Control
-
-Git repository initialized.
-
-Branch renamed to:
-
-```
-main
-```
-
-Repository prepared for first commit.
-
----
-
-## Folder Structure
-
-Completed the initial project directory organization.
-
-- Backend
-- Frontend
-- Datasets
-- Documentation
-- Models
-- Reports
-- Docker
-- Assets
-- Notebooks
-
----
-
-## Documentation Created
-
-Prepared documentation for:
-
-- Installation
-- Environment Setup
 - Project Setup
 - Weekly Learning Notes
 
@@ -244,6 +89,25 @@ Successfully learned:
 
 ---
 
+## [Day 2] - 2026-07-08
+
+### Added
+- Architecture documentation
+- Dataset analysis documentation
+- Project mapping document
+- System workflow document
+
+### Improved
+- Backend architecture verification
+- Project folder verification
+
+### Pending
+- Renewable energy dataset download
+- Dataset preprocessing
+- Exploratory Data Analysis (EDA)
+
+---
+
 Project Version
 
 ```
@@ -255,3 +119,22 @@ Project Status
 ```
 Development Started
 ```
+
+## [Day 2] - 2026-07-08
+
+### Added
+- Architecture documentation
+- Dataset analysis documentation
+- Project mapping document
+- System workflow document
+
+### Improved
+- Backend architecture verification
+- Project folder verification
+
+### Pending
+- Renewable energy dataset download
+- Dataset preprocessing
+- Exploratory Data Analysis (EDA)
+
+

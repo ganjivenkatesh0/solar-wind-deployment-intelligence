@@ -236,6 +236,23 @@ Due to limited internet availability, dataset downloads have been postponed. The
 
 ---
 
+## Day 3 Progress
+
+### Completed
+- Studied backend architecture.
+- Learned REST API communication.
+- Understood project modules.
+- Learned Authentication concepts.
+- Studied SQL Primary Key and Foreign Key.
+- Created the project architecture documentation.
+
+### Pending
+- Implement APIs.
+- Implement Authentication.
+- Design database tables.
+
+---
+
 ## DevOps (Upcoming)
 
 - Docker

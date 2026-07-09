@@ -1,7 +1,28 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+---
 
+## Day 3 - 02 July 2026
+
+### Added
+- Project architecture documentation.
+- Backend workflow documentation.
+- API flow documentation.
+
+### Learned
+- Backend architecture
+- REST APIs
+- Authentication
+- SQL Primary Key
+- SQL Foreign Key
+
+### Pending
+- API implementation
+- Authentication implementation
+- Database design
+
+---
 ---
 
 ## Day 2 - 01 July 2026
@@ -30,7 +51,7 @@ All notable changes to this project will be documented in this file.
 - Perform Exploratory Data Analysis (EDA).
 - Build preprocessing pipeline.
 
----
+
 
 ## Day 1 - 30 June 2026
 

@@ -89,6 +89,48 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+# Day 6 - 07 July 2026
+
+## Added
+
+- Modular FastAPI router architecture.
+- Home router.
+- Projects router.
+- Sites router.
+- Predictions router.
+- Backend routing documentation.
+- Weekly Notes for Day 6.
+
+## Implemented
+
+- GET `/projects`
+- GET `/sites`
+- Router registration using `app.include_router()`
+
+## Tested
+
+- GET `/`
+- GET `/health`
+- GET `/about`
+- GET `/projects`
+- GET `/sites`
+- Swagger UI
+
+## Updated
+
+- Backend project structure.
+- API documentation.
+- README.md
+
+## Pending
+
+- Authentication
+- Database integration
+- Prediction APIs
+- Machine Learning models
+
+---
+
 ## Day 2 - 01 July 2026
 
 ### Added

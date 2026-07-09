@@ -70,9 +70,9 @@ Returns project information.
 
 ---
 
-# Testing
+# API Testing
 
-The APIs can be tested using:
+The APIs were verified using:
 
 - Browser
 - Swagger UI
@@ -87,12 +87,12 @@ http://127.0.0.1:8000/docs
 
 # Future APIs
 
-The following APIs will be implemented in upcoming development phases.
+The following APIs will be implemented in future phases.
 
 - User Authentication
 - User Registration
 - Solar Prediction
 - Wind Prediction
-- Site Suitability Prediction
+- Site Suitability
 - Report Generation
 - Dashboard APIs

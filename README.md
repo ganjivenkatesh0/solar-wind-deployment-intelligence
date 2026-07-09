@@ -1236,3 +1236,72 @@ uvicorn backend.app.main:app --reload
 - Machine Learning Integration
 - Dashboard APIs
 
+---
+
+# Day 6 Progress (07 July 2026)
+
+## Session Topic
+
+FastAPI Routing & Backend Module Organization
+
+## Objectives Completed
+
+- Refactored the backend into modular routers.
+- Moved the root endpoint from `main.py` to `app/api/home.py`.
+- Created dedicated router files for project modules.
+- Registered all routers in the FastAPI application.
+- Implemented the first project APIs using hardcoded data.
+- Verified all APIs using Swagger UI.
+- Continued backend architecture documentation.
+
+## Backend Routing
+
+The backend has been organized into separate router modules.
+
+```
+backend/app/api/
+│
+├── home.py
+├── projects.py
+├── sites.py
+└── predictions.py
+```
+
+Each router is responsible for a specific feature of the application.
+
+## Implemented API Endpoints
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | / | Welcome message |
+| GET | /health | Application status |
+| GET | /about | Project information |
+| GET | /projects | List of demo projects |
+| GET | /sites | List of demo sites |
+
+## API Testing
+
+Successfully tested using:
+
+- Browser
+- Swagger UI (`/docs`)
+
+## Current Backend Status
+
+### Completed
+
+- Modular FastAPI Routing
+- Router Registration
+- REST API Development
+- Swagger Documentation
+- Hardcoded Demo APIs
+
+### Pending
+
+- Authentication APIs
+- PostgreSQL Integration
+- Database Models
+- Prediction APIs
+- Machine Learning Integration
+- Dashboard APIs
+

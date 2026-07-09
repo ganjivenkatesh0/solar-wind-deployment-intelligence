@@ -56,6 +56,39 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+# Day 5 - 06 July 2026
+
+## Added
+
+- Backend API documentation.
+- REST API endpoints.
+- API testing documentation.
+- Weekly Notes for Day 5.
+
+## Implemented
+
+- FastAPI backend execution.
+- Uvicorn ASGI server.
+- GET `/`
+- GET `/health`
+- GET `/about`
+
+## Tested
+
+- Local backend server.
+- Browser API responses.
+- Swagger UI documentation.
+
+## Pending
+
+- Authentication APIs.
+- Database integration.
+- PostgreSQL connection.
+- Prediction APIs.
+- Frontend integration.
+
+---
+
 ## Day 2 - 01 July 2026
 
 ### Added

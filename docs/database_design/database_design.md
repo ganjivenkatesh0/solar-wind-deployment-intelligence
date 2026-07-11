@@ -29,37 +29,33 @@ The full implementation will be added once dataset structure and API requirement
 
 # SQLAlchemy Model Implementation
 
-## Project Table
-
-Table Name:
-
-projects
+## Projects Table
 
 | Column | Data Type | Description |
-|---------|-----------|-------------|
+|----------|-----------|-------------|
 | id | Integer | Primary Key |
-| project_name | String | Project Name |
-| location | String | Project Location |
+| project_name | String | Name of the renewable energy project |
+| description | String | Project description |
+| state | String | State where the project is located |
+| latitude | Float | Latitude of the project site |
+| longitude | Float | Longitude of the project site |
+| created_at | DateTime | Record creation timestamp |
 
----
+### Primary Key
 
-## ORM Mapping
+- id
 
-Python Class:
+### ORM
 
-Project
+Implemented using SQLAlchemy ORM.
 
-Database Table:
+### Validation
 
-projects
+Implemented using Pydantic request schemas.
 
-SQLAlchemy automatically maps the Project class to the projects table.
+### Current Status
 
----
-
-## Current Status
-
-- Database connection configured.
-- SQLAlchemy integrated.
-- Projects table generated successfully.
-- CRUD operations will be implemented in future sessions.
+- Table creation verified.
+- Data insertion verified.
+- Data retrieval verified.
+- PostgreSQL integration completed.

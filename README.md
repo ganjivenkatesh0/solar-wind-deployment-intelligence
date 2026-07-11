@@ -260,6 +260,48 @@ Due to limited internet availability, dataset downloads have been postponed. The
 
 ---
 
+## Day 8 Progress
+
+### Database Integration with SQLAlchemy
+
+Implemented SQLAlchemy ORM and connected the FastAPI application to PostgreSQL.
+
+### Features Completed
+
+- Configured SQLAlchemy database connection.
+- Created the Project database model.
+- Connected PostgreSQL using SQLAlchemy.
+- Automatically generated the `projects` table.
+- Created Pydantic schemas for request and response validation.
+- Implemented `POST /projects` to store project data.
+- Connected `GET /projects` to retrieve data from PostgreSQL.
+- Added validation for project name, description, latitude, and longitude.
+- Verified API functionality using Swagger UI.
+- Verified data persistence using pgAdmin.
+
+### Current API Endpoints
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | / | Home endpoint |
+| GET | /health | Health check |
+| GET | /about | Project information |
+| GET | /projects | Retrieve all projects |
+| POST | /projects | Create a new project |
+| GET | /sites | Sample site data |
+
+### Current Technologies
+
+- Python
+- FastAPI
+- Uvicorn
+- SQLAlchemy
+- PostgreSQL
+- Pydantic
+- Swagger UI
+
+---
+
 ## Day 7 Progress
 
 ### SQLAlchemy Integration

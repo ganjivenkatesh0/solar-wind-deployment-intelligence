@@ -258,6 +258,30 @@ Successfully learned:
 
 ---
 
+## Day 8 – PostgreSQL Integration & Project APIs
+
+### Added
+
+- Configured SQLAlchemy ORM.
+- Connected FastAPI with PostgreSQL.
+- Added Project database model.
+- Created Project Pydantic schemas.
+- Implemented POST /projects endpoint.
+- Connected GET /projects endpoint with PostgreSQL.
+- Added request validation for incoming project data.
+- Verified database operations using pgAdmin.
+- Tested all APIs through Swagger UI.
+
+### Verified
+
+- Database connection established successfully.
+- Automatic table creation using SQLAlchemy.
+- Data insertion into PostgreSQL.
+- Data retrieval from PostgreSQL.
+- Validation errors correctly return HTTP 422 responses.
+
+---
+
 Project Version
 
 ```

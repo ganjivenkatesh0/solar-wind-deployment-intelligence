@@ -260,6 +260,44 @@ Due to limited internet availability, dataset downloads have been postponed. The
 
 ---
 
+## Day 7 Progress
+
+### SQLAlchemy Integration
+- Installed SQLAlchemy ORM.
+- Installed PostgreSQL driver (psycopg2-binary).
+- Configured database connection using SQLAlchemy.
+- Created the database engine, session factory, and declarative base.
+
+### Database Model
+- Created the first database model (`Project`).
+- Defined the following fields:
+  - id (Primary Key)
+  - project_name
+  - location
+
+### Database Integration
+- Connected FastAPI with PostgreSQL.
+- Automatically generated the `projects` table using SQLAlchemy metadata.
+- Verified the table creation in pgAdmin and PostgreSQL.
+
+### API Verification
+The existing REST APIs continue to work successfully:
+
+- GET /
+- GET /health
+- GET /about
+- GET /projects
+- GET /sites
+
+### Technologies Used
+- FastAPI
+- Uvicorn
+- PostgreSQL
+- SQLAlchemy
+- psycopg2-binary
+
+---
+
 # 📂 Project Folder Structure
 
 ```text

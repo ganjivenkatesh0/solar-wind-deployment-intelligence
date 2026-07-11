@@ -131,6 +131,29 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+# Day 7 - SQLAlchemy & PostgreSQL Integration
+
+## Added
+- SQLAlchemy ORM configuration.
+- PostgreSQL database connection.
+- Database engine configuration.
+- SessionLocal configuration.
+- Declarative Base configuration.
+- Project database model.
+- Automatic table creation using SQLAlchemy.
+- PostgreSQL database verification.
+
+## Updated
+- main.py to initialize SQLAlchemy metadata.
+- backend requirements with SQLAlchemy and psycopg2-binary.
+
+## Verified
+- PostgreSQL connection established successfully.
+- Projects table created automatically.
+- Existing API endpoints continue to function correctly.
+
+---
+
 ## Day 2 - 01 July 2026
 
 ### Added

@@ -26,3 +26,40 @@ This document describes the PostgreSQL database design for the Solar & Wind Depl
 ## Notes
 
 The full implementation will be added once dataset structure and API requirements are finalized.
+
+# SQLAlchemy Model Implementation
+
+## Project Table
+
+Table Name:
+
+projects
+
+| Column | Data Type | Description |
+|---------|-----------|-------------|
+| id | Integer | Primary Key |
+| project_name | String | Project Name |
+| location | String | Project Location |
+
+---
+
+## ORM Mapping
+
+Python Class:
+
+Project
+
+Database Table:
+
+projects
+
+SQLAlchemy automatically maps the Project class to the projects table.
+
+---
+
+## Current Status
+
+- Database connection configured.
+- SQLAlchemy integrated.
+- Projects table generated successfully.
+- CRUD operations will be implemented in future sessions.

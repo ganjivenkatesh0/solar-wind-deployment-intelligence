@@ -35,3 +35,20 @@ dist/
 # OS Files
 Thumbs.db
 .DS_Store
+
+# Ignore all datasets
+datasets/
+
+# Keep the folder structure
+!datasets/
+!datasets/.gitkeep
+!datasets/nasa_power/
+!datasets/global_wind_atlas/
+!datasets/openstreetmap/
+!datasets/sentinel/
+!datasets/srtm/
+!datasets/nasa_power/.gitkeep
+!datasets/global_wind_atlas/.gitkeep
+!datasets/openstreetmap/.gitkeep
+!datasets/sentinel/.gitkeep
+!datasets/srtm/.gitkeep

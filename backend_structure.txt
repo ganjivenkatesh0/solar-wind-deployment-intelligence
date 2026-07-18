@@ -1,0 +1,43 @@
+backend/
+│
+├── app/
+│   │
+│   ├── api/
+│   │   ├── routes.py
+│   │   ├── projects.py
+│   │   ├── features.py
+│   │   └── solar.py
+│   │
+│   ├── core/
+│   │   ├── config.py
+│   │   └── database.py
+│   │
+│   ├── data_sources/
+│   │   └── nasa_power.py
+│   │
+│   ├── models/
+│   │   ├── project.py
+│   │   └── feature.py
+│   │
+│   ├── schemas/
+│   │   ├── project.py
+│   │   └── feature.py
+│   │
+│   ├── services/
+│   │   ├── feature_store.py
+│   │   ├── solar_service.py
+│   │   ├── spatial_analysis.py
+│   │   ├── wind_assessment.py
+│   │   └── deployment_strategy.py
+│   │
+│   ├── spatial/
+│   │   ├── raster_processor.py
+│   │   └── vector_processor.py
+│   │
+│   ├── utils/
+│   │   └── coordinates.py
+│   │
+│   └── main.py
+│
+├── requirements.txt
+└── README.md

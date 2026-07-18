@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, Float, DateTime
 from sqlalchemy.sql import func
 
-from backend.app.database.database import Base
+from app.database.database import Base
 
 
 class Feature(Base):

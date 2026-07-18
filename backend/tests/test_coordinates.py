@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.app.utils.coordinates import (
+from app.utils.coordinates import (
     create_coordinate,
     validate_coordinates,
 )

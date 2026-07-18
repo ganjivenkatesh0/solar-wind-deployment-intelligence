@@ -3,10 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.app.database.database import get_db
-from backend.app.schemas.feature import FeatureResponse
-from backend.app.services.feature_store import FeatureStoreService
-from backend.app.models.feature import Feature
+from app.database.database import get_db
+from app.schemas.feature import FeatureResponse
+from app.services.feature_store import FeatureStoreService
+from app.models.feature import Feature
 
 router = APIRouter(
     prefix="/features",

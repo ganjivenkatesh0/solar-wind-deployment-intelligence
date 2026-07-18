@@ -2,9 +2,9 @@
 
 from typing import Any
 
-from backend.app.spatial.raster_processor import RasterProcessor
-from backend.app.spatial.vector_processor import VectorProcessor
-from backend.app.utils.coordinates import (
+from app.spatial.raster_processor import RasterProcessor
+from app.spatial.vector_processor import VectorProcessor
+from app.utils.coordinates import (
     Coordinate,
     create_coordinate,
 )

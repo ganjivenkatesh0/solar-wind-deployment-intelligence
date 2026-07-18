@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.app.services.spatial_analysis import (
+from app.services.spatial_analysis import (
     SpatialAnalysisService,
 )
 

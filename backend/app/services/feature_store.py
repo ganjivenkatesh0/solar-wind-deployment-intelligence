@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session
 
-from backend.app.models.feature import Feature
-from backend.app.schemas.feature import FeatureCreate
+from app.models.feature import Feature
+from app.schemas.feature import FeatureCreate
 
 
 class FeatureStoreService:

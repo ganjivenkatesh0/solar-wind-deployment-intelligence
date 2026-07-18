@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.app.spatial.raster_processor import RasterProcessor
+from app.spatial.raster_processor import RasterProcessor
 
 
 def test_raster_processor_creation():

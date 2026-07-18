@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.app.spatial.vector_processor import VectorProcessor
+from app.spatial.vector_processor import VectorProcessor
 
 
 def test_vector_processor_creation():

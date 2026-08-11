@@ -137,8 +137,8 @@ def test_two_baseline_models_are_trained():
     assert "decision_tree" in models
     assert "random_forest" in models
 
-    assert type(models["decision_tree"]).__name__ == "DecisionTreeRegressor"
-    assert type(models["random_forest"]).__name__ == "RandomForestRegressor"
+    assert type(models["decision_tree"]["model"]).__name__ == "DecisionTreeRegressor"
+    assert type(models["random_forest"]["model"]).__name__ == "RandomForestRegressor"
 
 
 def test_random_forest_is_selected_as_best_model():
@@ -159,22 +159,22 @@ def test_random_forest_is_selected_as_best_model():
 
     results = {
         name: ModelComparison.evaluate_model(
-            model,
+            model_info["model"],
             X_train,
             y_train,
             X_validation,
             y_validation,
         )
-        for name, model in models.items()
+        for name, model_info in models.items()
     }
 
-    best_name, best_model = ModelComparison.select_best_model(
+    best_name, best_model_info = ModelComparison.select_best_model(
         models,
         results,
     )
 
     assert best_name == "random_forest"
-    assert type(best_model).__name__ == "RandomForestRegressor"
+    assert type(best_model_info["model"]).__name__ == "RandomForestRegressor"
     assert results[best_name]["validation_r2"] == 0.9385
 
 
@@ -193,6 +193,41 @@ def test_best_model_persistence():
 
     assert type(model).__name__ == "RandomForestRegressor"
     assert model.n_estimators == 100
+
+
+def test_compare_candidate_models_returns_metrics_and_serializes_best_model():
+    from app.services.machine_learning.model_comparison import ModelComparison
+    from app.services.machine_learning.model_persistence import ModelPersistence
+
+    result = ModelComparison.compare_candidate_models(
+        DATASET_PATH,
+    )
+
+    assert "decision_tree" in result["models"]
+    assert "random_forest" in result["models"]
+
+    for metrics in result["models"].values():
+        assert isinstance(metrics["validation_mae"], float)
+        assert isinstance(metrics["validation_rmse"], float)
+        assert isinstance(metrics["validation_r2"], float)
+        assert isinstance(metrics["training_time"], float)
+
+    assert result["best_model"]["name"] in result["models"]
+
+    model_path = Path("models/best_solar_pvout_model.joblib")
+    assert model_path.exists()
+
+    loaded_model = ModelPersistence.load(str(model_path))
+    assert type(loaded_model).__name__ in {
+        "DecisionTreeRegressor",
+        "RandomForestRegressor",
+    }
+
+    prediction = loaded_model.predict(
+        [[2026, 25.0, 70.0, 10.0, 50.0]]
+    )
+    assert len(prediction) == 1
+    assert isinstance(float(prediction[0]), float)
 
 
 '''For DAY 22, Add automated inference tests '''

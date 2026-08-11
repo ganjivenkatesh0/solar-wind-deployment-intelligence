@@ -259,6 +259,13 @@ class AnalysisPipelineService:
             economic_score=economic,
             overall_site_score=overall_site_score,
             technical_feasibility=technical_feasibility,
+
+            site_suitability=overall_site_score,
+            recommended_deployment=recommendation.deployment_type,
+            energy_yield=energy_estimation,
+            financial_metrics=financial_analysis,
+            recommendation_reason=recommendation.reason,
+
             deployment_plan={
                 "recommendation": recommendation.model_dump(),
                 "recommended_capacity_mw": recommended_capacity,

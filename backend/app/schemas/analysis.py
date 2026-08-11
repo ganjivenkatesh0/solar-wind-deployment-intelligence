@@ -58,4 +58,11 @@ class AnalysisResponse(BaseModel):
 
     technical_feasibility: TechnicalFeasibilityResponse
 
+    # Standardized Day-29 response fields
+    site_suitability: float
+    recommended_deployment: str
+    energy_yield: dict
+    financial_metrics: dict
+    recommendation_reason: str
+
     deployment_plan: dict

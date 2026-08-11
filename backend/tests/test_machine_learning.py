@@ -11,7 +11,9 @@ from app.services.machine_learning.dataset_preparation import (
 from app.services.machine_learning.model_persistence import (
     ModelPersistence,
 )
-
+from app.services.machine_learning.explainability import (
+    ModelExplainability,
+)
 
 from app.services.machine_learning.evaluation import (
     RegressionEvaluator,
@@ -230,7 +232,34 @@ def test_compare_candidate_models_returns_metrics_and_serializes_best_model():
     assert isinstance(float(prediction[0]), float)
 
 
-'''For DAY 22, Add automated inference tests '''
+def test_model_explainability_feature_importances():
+    from pathlib import Path
+
+    explainability = ModelExplainability()
+    importances = explainability.feature_importances()
+
+    assert isinstance(importances, list)
+    assert len(importances) == len(RenewableTrainingDataset.FEATURES)
+
+    previous_importance = 1.0
+    total_importance = 0.0
+    seen_features = set()
+
+    for entry in importances:
+        assert isinstance(entry["feature"], str)
+        assert isinstance(entry["importance"], float)
+        assert 0.0 <= entry["importance"] <= 1.0
+        assert entry["feature"] not in seen_features
+        seen_features.add(entry["feature"])
+
+        total_importance += entry["importance"]
+        assert entry["importance"] <= previous_importance
+        previous_importance = entry["importance"]
+
+    assert len(seen_features) == len(RenewableTrainingDataset.FEATURES)
+    assert abs(total_importance - 1.0) < 1e-6
+
+
 
 def test_model_inference_prediction():
     """Verify the trained model can generate a prediction."""
@@ -249,7 +278,11 @@ def test_model_inference_prediction():
 
     prediction = inference.predict(features)
 
-    assert isinstance(prediction, float)
+    assert isinstance(prediction, dict)
+    assert "solar_pvout_potential" in prediction
+    assert isinstance(prediction["solar_pvout_potential"], float)
+    assert "explanation" in prediction
+    assert isinstance(prediction["explanation"], dict)
 
 
 def test_model_inference_feature_validation():
@@ -287,4 +320,8 @@ def test_model_inference_feature_order():
 
     prediction = inference.predict(features)
 
-    assert isinstance(prediction, float)
+    assert isinstance(prediction, dict)
+    assert "solar_pvout_potential" in prediction
+    assert "explanation" in prediction
+    assert isinstance(prediction["solar_pvout_potential"], float)
+    assert isinstance(prediction["explanation"], dict)

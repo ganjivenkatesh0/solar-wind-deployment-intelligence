@@ -5,6 +5,7 @@ from typing import Any
 
 import pandas as pd
 
+from app.services.machine_learning.explainability import ModelExplainability
 from app.services.machine_learning.model_persistence import ModelPersistence
 
 
@@ -32,6 +33,7 @@ class RenewableModelInference:
             )
 
         self.model = ModelPersistence.load(str(self.model_path))
+        self.explainability = ModelExplainability(self.model_path)
 
     def validate_features(self, features: dict[str, Any]) -> pd.DataFrame:
         """
@@ -66,4 +68,7 @@ class RenewableModelInference:
 
         prediction = self.model.predict(input_data)
 
-        return float(prediction[0])
+        return {
+            "solar_pvout_potential": float(prediction[0]),
+            "explanation": self.explainability.explanation(),
+        }

@@ -61,7 +61,9 @@ class AnalysisPipelineService:
             "Hydro_Surface_Water_10^9_m3": 50.0,
         }
 
-        predicted_solar_pvout = self.ml_inference.predict(ml_features)
+        predicted_result = self.ml_inference.predict(ml_features)
+        predicted_solar_pvout = predicted_result["solar_pvout_potential"]
+        prediction_explanation = predicted_result["explanation"]
 
         # Temporary values
         wind_speed = 7.5
@@ -184,6 +186,7 @@ class AnalysisPipelineService:
             solar_features=solar_features,
             ml_prediction={
                 "solar_pvout_potential": predicted_solar_pvout,
+                "explanation": prediction_explanation,
             },
             wind_assessment=wind_assessment,
             renewable_score=renewable,

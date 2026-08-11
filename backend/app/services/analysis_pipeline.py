@@ -18,9 +18,19 @@ from app.schemas.deployment_recommendation import (
 from app.services.energy.energy_estimation import (
     estimate_hybrid_energy_yield,
 )
+from app.services.financial.financial_analysis import (
+    estimate_annual_revenue,
+    estimate_total_project_cost,
+    estimate_payback_period,
+    calculate_roi,
+)
 
 DEFAULT_SOLAR_CAPACITY_FACTOR = 0.22
 DEFAULT_SYSTEM_EFFICIENCY = 0.9
+
+DEFAULT_ELECTRICITY_TARIFF_INR_PER_KWH = 7.5
+DEFAULT_COST_PER_MW_INR = 10_000_000
+DEFAULT_ADDITIONAL_INSTALLATION_PERCENTAGE = 10.0
 
 from app.services.scoring.category_scoring import (
     renewable_resource_score,
@@ -148,6 +158,35 @@ class AnalysisPipelineService:
         )
         energy_estimation["deployment_type"] = deployment_type
 
+        # Step 10: Financial Analysis
+        annual_revenue = estimate_annual_revenue(
+            annual_energy_yield_mwh=energy_estimation["total_energy"],
+            electricity_tariff_inr_per_kwh=DEFAULT_ELECTRICITY_TARIFF_INR_PER_KWH,
+        )
+
+        estimated_project_cost = estimate_total_project_cost(
+            installed_capacity_mw=installed_capacity,
+            cost_per_mw_inr=DEFAULT_COST_PER_MW_INR,
+            additional_installation_percentage=DEFAULT_ADDITIONAL_INSTALLATION_PERCENTAGE,
+        )
+
+        payback_period = estimate_payback_period(
+            total_project_cost_inr=estimated_project_cost,
+            annual_revenue_inr=annual_revenue,
+        )
+
+        roi = calculate_roi(
+            total_project_cost_inr=estimated_project_cost,
+            annual_revenue_inr=annual_revenue,
+        )
+
+        financial_analysis = {
+            "annual_revenue": annual_revenue,
+            "estimated_project_cost": estimated_project_cost,
+            "payback_period": payback_period,
+            "roi": roi,
+        }
+
         # Step 10: Temporary Solar and Wind Scores
         solar_score = renewable
         wind_score = renewable
@@ -225,6 +264,7 @@ class AnalysisPipelineService:
                 "recommended_capacity_mw": recommended_capacity,
                 "expansion_status": expansion_status,
                 "energy_estimation": energy_estimation,
+                "financial_analysis": financial_analysis,
                 "optimization": deployment_plan.model_dump(),
             },
         )

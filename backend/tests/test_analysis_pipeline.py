@@ -98,3 +98,34 @@ def test_analysis_pipeline_feasibility_occurs_before_energy_estimation(monkeypat
 
 if __name__ == "__main__":
     test_analysis_pipeline()
+
+
+
+def test_analysis_pipeline_includes_financial_analysis():
+    request = AnalysisRequest(
+        latitude=17.3850,
+        longitude=78.4867,
+        land_area_hectares=40.0,
+        available_budget=5_000_000,
+    )
+
+    service = AnalysisPipelineService()
+    result = service.analyze_site(request)
+
+    financial = result.deployment_plan["financial_analysis"]
+
+    assert isinstance(financial, dict)
+
+    assert "annual_revenue" in financial
+    assert "estimated_project_cost" in financial
+    assert "payback_period" in financial
+    assert "roi" in financial
+
+    assert isinstance(financial["annual_revenue"], float)
+    assert isinstance(financial["estimated_project_cost"], float)
+    assert isinstance(financial["payback_period"], float)
+    assert isinstance(financial["roi"], float)
+
+    assert financial["annual_revenue"] >= 0.0
+    assert financial["estimated_project_cost"] > 0.0
+    assert financial["payback_period"] >= 0.0

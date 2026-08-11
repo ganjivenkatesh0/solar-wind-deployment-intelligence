@@ -6,6 +6,7 @@ from app.services.deployment_recommendation_service import (
 from app.services.capacity_planner import CapacityPlanner
 from app.services.expansion_analysis import ExpansionAnalysis
 from app.services.deployment_plan import DeploymentPlanService
+from app.services.machine_learning.inference import RenewableModelInference
 
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.schemas.optimization import OptimizationRequest
@@ -38,6 +39,7 @@ class AnalysisPipelineService:
         self.capacity_planner = CapacityPlanner()
         self.expansion_analysis = ExpansionAnalysis()
         self.deployment_plan = DeploymentPlanService()
+        self.ml_inference = RenewableModelInference()
 
     def analyze_site(self, request: AnalysisRequest) -> AnalysisResponse:
         """
@@ -49,6 +51,17 @@ class AnalysisPipelineService:
             latitude=request.latitude,
             longitude=request.longitude,
         )
+
+        # Step 1.1: Machine Learning Solar PVOUT Prediction
+        ml_features = {
+            "Year": 2026,
+            "renewables_share_elec": 25.0,
+            "Governance_Score": 70.0,
+            "Offshore_Wind_Potential_GW": 10.0,
+            "Hydro_Surface_Water_10^9_m3": 50.0,
+        }
+
+        predicted_solar_pvout = self.ml_inference.predict(ml_features)
 
         # Temporary values
         wind_speed = 7.5
@@ -169,6 +182,9 @@ class AnalysisPipelineService:
                 # Step 15: Return complete analysis response
         return AnalysisResponse(
             solar_features=solar_features,
+            ml_prediction={
+                "solar_pvout_potential": predicted_solar_pvout,
+            },
             wind_assessment=wind_assessment,
             renewable_score=renewable,
             terrain_score=terrain,

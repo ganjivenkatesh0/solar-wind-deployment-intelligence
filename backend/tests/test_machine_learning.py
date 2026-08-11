@@ -193,3 +193,63 @@ def test_best_model_persistence():
 
     assert type(model).__name__ == "RandomForestRegressor"
     assert model.n_estimators == 100
+
+
+'''For DAY 22, Add automated inference tests '''
+
+def test_model_inference_prediction():
+    """Verify the trained model can generate a prediction."""
+
+    from app.services.machine_learning.inference import RenewableModelInference
+
+    inference = RenewableModelInference()
+
+    features = {
+        "Year": 2020,
+        "renewables_share_elec": 25.0,
+        "Governance_Score": 70.0,
+        "Offshore_Wind_Potential_GW": 10.0,
+        "Hydro_Surface_Water_10^9_m3": 50.0,
+    }
+
+    prediction = inference.predict(features)
+
+    assert isinstance(prediction, float)
+
+
+def test_model_inference_feature_validation():
+    """Verify incomplete feature sets are rejected."""
+
+    import pytest
+
+    from app.services.machine_learning.inference import RenewableModelInference
+
+    inference = RenewableModelInference()
+
+    incomplete_features = {
+        "Year": 2020,
+        "renewables_share_elec": 25.0,
+    }
+
+    with pytest.raises(ValueError, match="Missing required features"):
+        inference.predict(incomplete_features)
+
+
+def test_model_inference_feature_order():
+    """Verify predictions are independent of dictionary insertion order."""
+
+    from app.services.machine_learning.inference import RenewableModelInference
+
+    inference = RenewableModelInference()
+
+    features = {
+        "Hydro_Surface_Water_10^9_m3": 50.0,
+        "Governance_Score": 70.0,
+        "Year": 2020,
+        "Offshore_Wind_Potential_GW": 10.0,
+        "renewables_share_elec": 25.0,
+    }
+
+    prediction = inference.predict(features)
+
+    assert isinstance(prediction, float)

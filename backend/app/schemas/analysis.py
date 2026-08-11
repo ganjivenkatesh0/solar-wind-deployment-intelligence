@@ -20,6 +20,7 @@ class AnalysisResponse(BaseModel):
     economic_score: float
 
     overall_site_score: float
+    ml_prediction: dict
 
     deployment_plan: dict
     

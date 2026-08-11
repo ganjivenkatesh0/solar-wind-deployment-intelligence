@@ -1,4 +1,38 @@
+from typing import Any
+
 from pydantic import BaseModel
+
+
+class HardConstraintResult(BaseModel):
+    passed: bool
+    status: str
+    reason: str
+
+
+class HardConstraintsResponse(BaseModel):
+    passed: bool
+    constraints: dict[str, HardConstraintResult]
+    failed_constraints: list[str]
+
+
+class SoftConstraintResult(BaseModel):
+    score: float
+    value: float
+    unit: str
+
+
+class SoftConstraintsResponse(BaseModel):
+    score: float
+    constraints: dict[str, SoftConstraintResult]
+
+
+class TechnicalFeasibilityResponse(BaseModel):
+    is_feasible: bool
+    feasibility_score: float
+    decision: str
+    hard_constraints: HardConstraintsResponse
+    soft_constraints: SoftConstraintsResponse
+    constraint_summary: str
 
 
 class AnalysisRequest(BaseModel):
@@ -22,5 +56,6 @@ class AnalysisResponse(BaseModel):
     overall_site_score: float
     ml_prediction: dict
 
+    technical_feasibility: TechnicalFeasibilityResponse
+
     deployment_plan: dict
-    

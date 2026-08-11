@@ -7,6 +7,7 @@ from app.services.capacity_planner import CapacityPlanner
 from app.services.expansion_analysis import ExpansionAnalysis
 from app.services.deployment_plan import DeploymentPlanService
 from app.services.machine_learning.inference import RenewableModelInference
+from app.services.feasibility.feasibility_engine import FeasibilityEngine
 
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.schemas.optimization import OptimizationRequest
@@ -40,6 +41,7 @@ class AnalysisPipelineService:
         self.expansion_analysis = ExpansionAnalysis()
         self.deployment_plan = DeploymentPlanService()
         self.ml_inference = RenewableModelInference()
+        self.feasibility_engine = FeasibilityEngine()
 
     def analyze_site(self, request: AnalysisRequest) -> AnalysisResponse:
         """
@@ -61,15 +63,28 @@ class AnalysisPipelineService:
             "Hydro_Surface_Water_10^9_m3": 50.0,
         }
 
-        predicted_result = self.ml_inference.predict(ml_features)
-        predicted_solar_pvout = predicted_result["solar_pvout_potential"]
-        prediction_explanation = predicted_result["explanation"]
+        # Call the inference service and unpack numeric prediction + explanation
+        _prediction = self.ml_inference.predict(ml_features)
+
+        if isinstance(_prediction, dict) and "solar_pvout_potential" in _prediction:
+            predicted_solar_pvout = float(_prediction["solar_pvout_potential"])
+            prediction_explanation = _prediction.get("explanation")
+        else:
+            predicted_solar_pvout = float(_prediction)
+            prediction_explanation = None
 
         # Temporary values
         wind_speed = 7.5
         slope = 4.0
         grid_distance = 2.0
         road_distance = 1.5
+
+        # Step 1.2: Technical Feasibility Evaluation
+        technical_feasibility = self.feasibility_engine.evaluate(
+            slope=slope,
+            grid_distance=grid_distance,
+            road_distance=road_distance,
+        )
 
         # Step 2: Wind assessment
         wind_assessment = self.wind_service.classify_wind_site(
@@ -195,6 +210,7 @@ class AnalysisPipelineService:
             environmental_score=environmental,
             economic_score=economic,
             overall_site_score=overall_site_score,
+            technical_feasibility=technical_feasibility,
             deployment_plan={
                 "recommendation": recommendation.model_dump(),
                 "recommended_capacity_mw": recommended_capacity,

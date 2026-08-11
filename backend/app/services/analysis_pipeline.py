@@ -15,7 +15,12 @@ from app.schemas.deployment_recommendation import (
     DeploymentRecommendationRequest,
 )
 
-from app.services.energy.energy_service import estimate_site_energy
+from app.services.energy.energy_estimation import (
+    estimate_hybrid_energy_yield,
+)
+
+DEFAULT_SOLAR_CAPACITY_FACTOR = 0.22
+DEFAULT_SYSTEM_EFFICIENCY = 0.9
 
 from app.services.scoring.category_scoring import (
     renewable_resource_score,
@@ -134,10 +139,14 @@ class AnalysisPipelineService:
         installed_capacity = 50.0
 
                 # Step 9: Estimate annual energy generation
-        energy_estimation = estimate_site_energy(
-            deployment_type=deployment_type,
+        wind_capacity_factor = wind_assessment["capacity_factor"] / 100.0
+        energy_estimation = estimate_hybrid_energy_yield(
             installed_capacity=installed_capacity,
+            solar_capacity_factor=DEFAULT_SOLAR_CAPACITY_FACTOR,
+            wind_capacity_factor=wind_capacity_factor,
+            system_efficiency=DEFAULT_SYSTEM_EFFICIENCY,
         )
+        energy_estimation["deployment_type"] = deployment_type
 
         # Step 10: Temporary Solar and Wind Scores
         solar_score = renewable

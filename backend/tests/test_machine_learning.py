@@ -89,3 +89,107 @@ def test_regression_evaluation():
     assert metrics["mae"] >= 0
     assert metrics["rmse"] >= 0
     assert metrics["r2"] <= 1
+
+
+
+
+'''DAY 22 TEST FOR MACHINE LEARNING MODEL COMPARISON'''
+
+def test_three_way_dataset_split():
+    from app.services.machine_learning.dataset_preparation import (
+        RenewableTrainingDataset,
+    )
+    from app.services.machine_learning.model_comparison import ModelComparison
+
+    X, y = RenewableTrainingDataset.prepare(
+        "datasets/raw/global_wind_atlas/global_data.xlsx"
+    )
+
+    X_train, X_validation, X_test, y_train, y_validation, y_test = (
+        ModelComparison.split_dataset(X, y)
+    )
+
+    assert len(X_train) == 1310
+    assert len(X_validation) == 281
+    assert len(X_test) == 281
+
+    assert len(y_train) == 1310
+    assert len(y_validation) == 281
+    assert len(y_test) == 281
+
+    assert len(X_train) + len(X_validation) + len(X_test) == 1872
+
+
+def test_two_baseline_models_are_trained():
+    from app.services.machine_learning.dataset_preparation import (
+        RenewableTrainingDataset,
+    )
+    from app.services.machine_learning.model_comparison import ModelComparison
+
+    X, y = RenewableTrainingDataset.prepare(
+        "datasets/raw/global_wind_atlas/global_data.xlsx"
+    )
+
+    X_train, _, _, y_train, _, _ = ModelComparison.split_dataset(X, y)
+
+    models = ModelComparison.train_models(X_train, y_train)
+
+    assert "decision_tree" in models
+    assert "random_forest" in models
+
+    assert type(models["decision_tree"]).__name__ == "DecisionTreeRegressor"
+    assert type(models["random_forest"]).__name__ == "RandomForestRegressor"
+
+
+def test_random_forest_is_selected_as_best_model():
+    from app.services.machine_learning.dataset_preparation import (
+        RenewableTrainingDataset,
+    )
+    from app.services.machine_learning.model_comparison import ModelComparison
+
+    X, y = RenewableTrainingDataset.prepare(
+        "datasets/raw/global_wind_atlas/global_data.xlsx"
+    )
+
+    X_train, X_validation, _, y_train, y_validation, _ = (
+        ModelComparison.split_dataset(X, y)
+    )
+
+    models = ModelComparison.train_models(X_train, y_train)
+
+    results = {
+        name: ModelComparison.evaluate_model(
+            model,
+            X_train,
+            y_train,
+            X_validation,
+            y_validation,
+        )
+        for name, model in models.items()
+    }
+
+    best_name, best_model = ModelComparison.select_best_model(
+        models,
+        results,
+    )
+
+    assert best_name == "random_forest"
+    assert type(best_model).__name__ == "RandomForestRegressor"
+    assert results[best_name]["validation_r2"] == 0.9385
+
+
+def test_best_model_persistence():
+    from pathlib import Path
+
+    from app.services.machine_learning.model_persistence import (
+        ModelPersistence,
+    )
+
+    model_path = Path("models/best_solar_pvout_model.joblib")
+
+    assert model_path.exists()
+
+    model = ModelPersistence.load(str(model_path))
+
+    assert type(model).__name__ == "RandomForestRegressor"
+    assert model.n_estimators == 100

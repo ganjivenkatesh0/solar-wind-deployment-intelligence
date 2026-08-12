@@ -1,5 +1,6 @@
 from app.services.solar_service import SolarFeatureService
 from app.services.wind_assessment import WindAssessmentService
+from app.data_sources.global_wind_atlas import GlobalWindAtlasClient
 from app.services.deployment_recommendation_service import (
     DeploymentRecommendationService,
 )
@@ -51,6 +52,7 @@ class AnalysisPipelineService:
     def __init__(self):
         self.solar_service = SolarFeatureService()
         self.wind_service = WindAssessmentService()
+        self.wind_data_source = GlobalWindAtlasClient()
         self.deployment_service = DeploymentRecommendationService()
         self.capacity_planner = CapacityPlanner()
         self.expansion_analysis = ExpansionAnalysis()
@@ -88,8 +90,15 @@ class AnalysisPipelineService:
             predicted_solar_pvout = float(_prediction)
             prediction_explanation = None
 
+        # Step 1.1: Get location-specific wind data from Global Wind Atlas
+        wind_data = self.wind_data_source.get_wind_data(
+            latitude=request.latitude,
+            longitude=request.longitude,
+        )
+
+        wind_speed = wind_data["wind_speed"]
+
         # Temporary values
-        wind_speed = 7.5
         slope = 4.0
         grid_distance = 2.0
         road_distance = 1.5

@@ -19,6 +19,8 @@ services:
       DATABASE_URL: postgresql://postgres:postgres123@db:5432/solar_wind_db
     ports:
       - "8000:8000"
+    volumes:
+      - ./datasets/raw/global_wind_atlas:/app/datasets/raw/global_wind_atlas:ro
     depends_on:
       db:
         condition: service_healthy

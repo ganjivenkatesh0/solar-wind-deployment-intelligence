@@ -52,3 +52,5 @@ datasets/
 !datasets/openstreetmap/.gitkeep
 !datasets/sentinel/.gitkeep
 !datasets/srtm/.gitkeep
+# Large Global Wind Atlas raster dataset
+datasets/raw/global_wind_atlas/IND_wind-speed_50m.tif

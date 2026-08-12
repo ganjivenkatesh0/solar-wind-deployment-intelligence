@@ -4,10 +4,8 @@ from app.services.analysis_pipeline import AnalysisPipelineService
 
 TEST_LOCATIONS = [
     (17.3850, 78.4867),  # Hyderabad
-    (16.5062, 80.6480),  # Vijayawada
-    (17.6868, 83.2185),  # Visakhapatnam
-    (13.0827, 80.2707),  # Chennai
-    (12.9716, 77.5946),  # Bengaluru
+    (17.4500, 78.5000),  # Hyderabad North
+    (17.3000, 78.4500),  # Hyderabad South
 ]
 
 

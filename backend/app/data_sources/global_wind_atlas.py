@@ -1,5 +1,6 @@
 """Global Wind Atlas local raster data source client."""
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,9 @@ class GlobalWindAtlasClient:
         height_m: int = DEFAULT_HEIGHT_M,
     ) -> None:
         self.height_m = height_m
+
+        if raster_path is None:
+            raster_path = os.getenv("GWA_RASTER_PATH")
 
         if raster_path is None:
             raster_path = (

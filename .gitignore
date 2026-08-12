@@ -54,3 +54,7 @@ datasets/
 !datasets/srtm/.gitkeep
 # Large Global Wind Atlas raster dataset
 datasets/raw/global_wind_atlas/IND_wind-speed_50m.tif
+
+# Local SRTM raster data
+datasets/raw/srtm/*.tif
+datasets/raw/srtm/*.tar.gz

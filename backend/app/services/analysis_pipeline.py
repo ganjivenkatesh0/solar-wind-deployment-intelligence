@@ -1,6 +1,7 @@
 from app.services.solar_service import SolarFeatureService
 from app.services.wind_assessment import WindAssessmentService
 from app.data_sources.global_wind_atlas import GlobalWindAtlasClient
+from app.data_sources.srtm import SRTMClient
 from app.services.deployment_recommendation_service import (
     DeploymentRecommendationService,
 )
@@ -53,6 +54,7 @@ class AnalysisPipelineService:
         self.solar_service = SolarFeatureService()
         self.wind_service = WindAssessmentService()
         self.wind_data_source = GlobalWindAtlasClient()
+        self.srtm_data_source = SRTMClient()
         self.deployment_service = DeploymentRecommendationService()
         self.capacity_planner = CapacityPlanner()
         self.expansion_analysis = ExpansionAnalysis()
@@ -98,8 +100,15 @@ class AnalysisPipelineService:
 
         wind_speed = wind_data["wind_speed"]
 
-        # Temporary values
-        slope = 4.0
+        # Location-specific terrain data from SRTM
+        terrain_data = self.srtm_data_source.get_terrain_data(
+            latitude=request.latitude,
+            longitude=request.longitude,
+        )
+
+        slope = terrain_data["slope"]
+
+        # Temporary infrastructure values
         grid_distance = 2.0
         road_distance = 1.5
 

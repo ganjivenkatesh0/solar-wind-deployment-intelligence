@@ -7,7 +7,6 @@ from app.api.sites import router as sites_router
 from app.api.predictions import router as predictions_router
 from app.api.features import router as feature_router
 from app.api import solar
-from app.api import analysis
 
 from app.api import deployment
 from app.api import optimization
@@ -31,7 +30,6 @@ app.include_router(sites_router)
 app.include_router(predictions_router)
 app.include_router(feature_router)
 app.include_router(solar.router)
-app.include_router(analysis.router)
 app.include_router(deployment.router)
 app.include_router(optimization.router)
 app.include_router(analysis_router)

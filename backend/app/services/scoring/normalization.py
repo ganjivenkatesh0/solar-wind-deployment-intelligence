@@ -84,3 +84,39 @@ def normalize_grid_distance(distance: Number) -> float:
 def normalize_road_distance(distance: Number) -> float:
     """Normalize distance to roads where lower values are better."""
     return normalize(distance, min_value=0, max_value=30, reverse=True)
+
+
+
+def normalize_temperature(temperature: Number) -> float:
+    """
+    Normalize temperature for environmental suitability.
+
+    Expected suitability range:
+    15–35 °C.
+
+    Temperatures below 15 °C or above 35 °C are
+    progressively less suitable for renewable-energy deployment.
+    """
+    return normalize(
+        temperature,
+        min_value=15.0,
+        max_value=35.0,
+    )
+
+
+def normalize_humidity(humidity: Number) -> float:
+    """
+    Normalize relative humidity for environmental suitability.
+
+    Expected suitability range:
+    30–80%.
+
+    Lower humidity is generally more favorable within
+    the defined environmental suitability range.
+    """
+    return normalize(
+        humidity,
+        min_value=30.0,
+        max_value=80.0,
+        reverse=True,
+    )

@@ -2,9 +2,11 @@
 
 from app.services.scoring.normalization import (
     normalize_grid_distance,
+    normalize_humidity,
     normalize_road_distance,
     normalize_slope,
     normalize_solar,
+    normalize_temperature,
     normalize_wind,
 )
 
@@ -30,9 +32,34 @@ def infrastructure_score(grid_distance: float, road_distance: float) -> float:
     return round((grid_score + road_score) / 2, 2)
 
 
-def environmental_score(score: float) -> float:
-    """Return a bounded environmental suitability score."""
-    return max(0.0, min(score, 100.0))
+def environmental_score(
+    solar_irradiance: float,
+    temperature: float,
+    relative_humidity: float,
+) -> float:
+    """
+    Calculate environmental suitability from location-specific
+    NASA POWER environmental features.
+
+    Weighting:
+    - Solar irradiance: 50%
+    - Temperature: 25%
+    - Relative humidity: 25%
+
+    Returns:
+        Environmental suitability score between 0 and 100.
+    """
+    solar_score = normalize_solar(solar_irradiance)
+    temperature_score = normalize_temperature(temperature)
+    humidity_score = normalize_humidity(relative_humidity)
+
+    score = (
+        solar_score * 0.50
+        + temperature_score * 0.25
+        + humidity_score * 0.25
+    )
+
+    return round(score, 2)
 
 
 def economic_score(score: float) -> float:

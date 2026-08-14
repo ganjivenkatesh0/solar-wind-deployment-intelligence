@@ -3,12 +3,13 @@ import pytest
 from app.services.scoring.normalization import (
     normalize,
     normalize_grid_distance,
+    normalize_humidity,
     normalize_road_distance,
     normalize_slope,
     normalize_solar,
+    normalize_temperature,
     normalize_wind,
 )
-
 
 def test_normalize_returns_expected_score_for_positive_direction():
     assert normalize(7.5, 3.0, 8.0) == pytest.approx(90.0)
@@ -29,6 +30,19 @@ def test_parameter_specific_normalizers():
     assert normalize_slope(2.0) == pytest.approx(93.33)
     assert normalize_grid_distance(3.0) == pytest.approx(94.0)
     assert normalize_road_distance(1.0) == pytest.approx(96.67)
+
+
+def test_environmental_normalizers():
+    assert normalize_temperature(25.0) == pytest.approx(50.0)
+    assert normalize_humidity(50.0) == pytest.approx(60.0)
+
+
+def test_environmental_normalizers_clamp_values():
+    assert normalize_temperature(5.0) == pytest.approx(0.0)
+    assert normalize_temperature(40.0) == pytest.approx(100.0)
+
+    assert normalize_humidity(10.0) == pytest.approx(100.0)
+    assert normalize_humidity(90.0) == pytest.approx(0.0)
 
 
 def test_normalize_raises_for_invalid_bounds():

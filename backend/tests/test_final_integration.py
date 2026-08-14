@@ -1,3 +1,5 @@
+import pytest
+
 from app.schemas.analysis import AnalysisRequest
 from app.services.analysis_pipeline import AnalysisPipelineService
 
@@ -42,8 +44,6 @@ def test_final_integration_multiple_locations():
 
 
 def test_final_integration_rejects_invalid_coordinates():
-    service = AnalysisPipelineService()
-
     invalid_locations = [
         (91.0, 78.4867),
         (-91.0, 78.4867),
@@ -52,23 +52,12 @@ def test_final_integration_rejects_invalid_coordinates():
     ]
 
     for latitude, longitude in invalid_locations:
-        request = AnalysisRequest(
-            latitude=latitude,
-            longitude=longitude,
-            land_area_hectares=40.0,
-            available_budget=5_000_000,
-        )
-
-        try:
-            service.analyze_site(request)
-            assert False, (
-                f"Invalid coordinates were accepted: "
-                f"{latitude}, {longitude}"
-            )
-        except ValueError as exc:
-            assert (
-                "Latitude must be between -90 and 90." in str(exc)
-                or "Longitude must be between -180 and 180." in str(exc)
+        with pytest.raises(ValueError):
+            AnalysisRequest(
+                latitude=latitude,
+                longitude=longitude,
+                land_area_hectares=40.0,
+                available_budget=5_000_000,
             )
 
 

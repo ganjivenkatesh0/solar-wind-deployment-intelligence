@@ -160,7 +160,11 @@ class AnalysisPipelineService:
         )
 
         # Step 6: Environmental & Economic Scores
-        environmental = environmental_score(85.0)
+        environmental = environmental_score(
+            solar_irradiance=solar_features["solar_irradiance"],
+            temperature=solar_features["temperature"],
+            relative_humidity=solar_features["relative_humidity"],
+        )
         economic = economic_score(80.0)
 
 

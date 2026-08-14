@@ -282,6 +282,7 @@ class AnalysisPipelineService:
         recommended_capacity = self.capacity_planner.recommend_capacity(
             land_area_hectares=request.land_area_hectares,
             overall_site_score=overall_site_score,
+            available_budget=request.available_budget,
         )
 
                 # Step 12: Analyze future expansion potential

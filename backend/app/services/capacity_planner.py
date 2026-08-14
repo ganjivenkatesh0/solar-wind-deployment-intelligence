@@ -4,15 +4,30 @@ class CapacityPlanner:
     installation capacity for a renewable energy site.
     """
 
-    @staticmethod
+    COST_PER_MW_INR = 10_000_000.0
+    ADDITIONAL_INSTALLATION_PERCENTAGE = 10.0
+    MINIMUM_CAPACITY_MW = 1.0
+
+    @classmethod
     def recommend_capacity(
+        cls,
         land_area_hectares: float,
         overall_site_score: float,
+        available_budget: float | None = None,
     ) -> float:
         """
         Estimate recommended installation capacity (MW)
-        using configurable land-area and site-score rules.
+        using land area, site suitability, and available budget.
         """
+
+        if land_area_hectares <= 0:
+            raise ValueError("Land area must be positive.")
+
+        if overall_site_score < 0:
+            raise ValueError("Overall site score cannot be negative.")
+
+        if available_budget is not None and available_budget <= 0:
+            raise ValueError("Available budget must be positive.")
 
         # Base capacity determined by land area
         if land_area_hectares < 10:
@@ -43,4 +58,26 @@ class CapacityPlanner:
         else:
             multiplier = 0.50
 
-        return round(capacity * multiplier, 2)
+        optimized_capacity = capacity * multiplier
+
+        # Apply budget constraint when budget is available.
+        if available_budget is not None:
+            effective_cost_per_mw = (
+                cls.COST_PER_MW_INR
+                * (1 + cls.ADDITIONAL_INSTALLATION_PERCENTAGE / 100)
+            )
+
+            budget_capacity = available_budget / effective_cost_per_mw
+
+            optimized_capacity = min(
+                optimized_capacity,
+                budget_capacity,
+            )
+
+        # Never recommend zero or negative capacity.
+        optimized_capacity = max(
+            optimized_capacity,
+            cls.MINIMUM_CAPACITY_MW,
+        )
+
+        return round(optimized_capacity, 2)

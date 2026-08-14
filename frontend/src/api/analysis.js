@@ -1,4 +1,5 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+const apiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL || '/api';
 
 export async function analyzeSite(payload) {
   let response;
@@ -13,30 +14,37 @@ export async function analyzeSite(payload) {
     });
   } catch {
     const error = new Error(
-      'Network error: unable to reach the analysis service.'
+      'Unable to reach the analysis service. Please verify that the backend is running.'
     );
     error.type = 'network';
     throw error;
   }
 
   if (!response.ok) {
-    let message = 'Failed to analyze location. The backend returned an error.';
+    let message =
+      'Failed to analyze location. The backend returned an error.';
+
+    const contentType = response.headers.get('content-type') || '';
 
     try {
-      const errorBody = await response.json();
+      if (contentType.includes('application/json')) {
+        const errorBody = await response.json();
 
-      if (typeof errorBody === 'object' && errorBody !== null) {
-        message =
-          errorBody.detail ||
-          errorBody.message ||
-          JSON.stringify(errorBody);
+        if (errorBody && typeof errorBody === 'object') {
+          message =
+            errorBody.detail ||
+            errorBody.message ||
+            JSON.stringify(errorBody);
+        }
+      } else {
+        const errorText = await response.text();
+
+        if (errorText) {
+          message = errorText;
+        }
       }
     } catch {
-      const errorText = await response.text();
-
-      if (errorText) {
-        message = errorText;
-      }
+      // Keep the default error message.
     }
 
     if (response.status >= 500) {
@@ -47,8 +55,5 @@ export async function analyzeSite(payload) {
     const error = new Error(message);
     error.status = response.status;
     error.type = 'backend';
-    throw error;
-  }
 
-  return response.json();
-}
+    throw error;

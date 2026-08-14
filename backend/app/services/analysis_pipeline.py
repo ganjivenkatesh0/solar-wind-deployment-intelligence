@@ -1,6 +1,7 @@
 from app.services.solar_service import SolarFeatureService
 from app.services.wind_assessment import WindAssessmentService
 from app.data_sources.global_wind_atlas import GlobalWindAtlasClient
+from app.data_sources.osm import OSMClient
 from app.data_sources.srtm import SRTMClient
 from app.services.deployment_recommendation_service import (
     DeploymentRecommendationService,
@@ -55,6 +56,7 @@ class AnalysisPipelineService:
         self.wind_service = WindAssessmentService()
         self.wind_data_source = GlobalWindAtlasClient()
         self.srtm_data_source = SRTMClient()
+        self.osm_data_source = OSMClient()
         self.deployment_service = DeploymentRecommendationService()
         self.capacity_planner = CapacityPlanner()
         self.expansion_analysis = ExpansionAnalysis()
@@ -108,9 +110,27 @@ class AnalysisPipelineService:
 
         slope = terrain_data["slope"]
 
-        # Temporary infrastructure values
-        grid_distance = 2.0
-        road_distance = 1.5
+        # Location-specific infrastructure data from OpenStreetMap
+        infrastructure_data = self.osm_data_source.get_infrastructure_data(
+            {
+                "latitude": request.latitude,
+                "longitude": request.longitude,
+            }
+        )
+
+        road_distance = infrastructure_data["road_distance_km"]
+        grid_distance = infrastructure_data["grid_distance_km"]
+
+        if road_distance is None:
+            raise RuntimeError(
+                "OpenStreetMap did not return a nearby road within the search radius."
+            )
+
+        if grid_distance is None:
+            raise RuntimeError(
+                "OpenStreetMap did not return nearby grid infrastructure "
+                "within the search radius."
+            )
 
         # Step 1.2: Technical Feasibility Evaluation
         technical_feasibility = self.feasibility_engine.evaluate(

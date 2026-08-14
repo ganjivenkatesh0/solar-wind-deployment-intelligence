@@ -17,6 +17,7 @@ def calculate_overall_score(
     infrastructure: float,
     environmental: float,
     economic: float,
+    sentinel2: float | None = None,
     weights: Dict[str, float] = DEFAULT_WEIGHTS,
 ) -> Dict[str, float]:
     """Calculate a weighted overall site suitability score."""
@@ -28,7 +29,7 @@ def calculate_overall_score(
         + economic * weights["economic"]
     )
 
-    return {
+    result = {
         "renewable_score": round(renewable, 2),
         "terrain_score": round(terrain, 2),
         "infrastructure_score": round(infrastructure, 2),
@@ -36,3 +37,8 @@ def calculate_overall_score(
         "economic_score": round(economic, 2),
         "overall_score": round(overall, 2),
     }
+
+    if sentinel2 is not None:
+        result["sentinel2_score"] = round(sentinel2, 2)
+
+    return result

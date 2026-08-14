@@ -129,3 +129,28 @@ def test_category_scoring_helpers_match_pipeline_expectations():
     assert renewable == 74.0
     assert terrain == 90.0
     assert infrastructure == 91.66
+
+
+def test_sentinel2_score_is_optional_and_does_not_change_overall_score():
+    result_without_sentinel = calculate_overall_score(
+        renewable=70,
+        terrain=80,
+        infrastructure=90,
+        environmental=75,
+        economic=85,
+    )
+
+    result_with_sentinel = calculate_overall_score(
+        renewable=70,
+        terrain=80,
+        infrastructure=90,
+        environmental=75,
+        economic=85,
+        sentinel2=85,
+    )
+
+    assert result_with_sentinel["sentinel2_score"] == 85.0
+    assert (
+        result_with_sentinel["overall_score"]
+        == result_without_sentinel["overall_score"]
+    )

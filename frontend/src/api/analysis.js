@@ -57,3 +57,7 @@ export async function analyzeSite(payload) {
     error.type = 'backend';
 
     throw error;
+  }
+
+  return response.json();
+}

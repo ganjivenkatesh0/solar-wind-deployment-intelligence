@@ -10,6 +10,10 @@ from app.services.capacity_planner import CapacityPlanner
 from app.services.expansion_analysis import ExpansionAnalysis
 from app.services.deployment_plan import DeploymentPlanService
 from app.services.machine_learning.inference import RenewableModelInference
+from app.services.machine_learning.contextual_features import (
+    MLContextualFeatureService,
+)
+from app.services.machine_learning.country_resolver import CountryResolver
 from app.services.feasibility.feasibility_engine import FeasibilityEngine
 
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
@@ -62,6 +66,8 @@ class AnalysisPipelineService:
         self.expansion_analysis = ExpansionAnalysis()
         self.deployment_plan = DeploymentPlanService()
         self.ml_inference = RenewableModelInference()
+        self.ml_context_service = MLContextualFeatureService()
+        self.country_resolver = CountryResolver()
         self.feasibility_engine = FeasibilityEngine()
 
     def analyze_site(self, request: AnalysisRequest) -> AnalysisResponse:
@@ -76,13 +82,14 @@ class AnalysisPipelineService:
         )
 
         # Step 1.1: Machine Learning Solar PVOUT Prediction
-        ml_features = {
-            "Year": 2026,
-            "renewables_share_elec": 25.0,
-            "Governance_Score": 70.0,
-            "Offshore_Wind_Potential_GW": 10.0,
-            "Hydro_Surface_Water_10^9_m3": 50.0,
-        }
+        country_iso = self.country_resolver.resolve_iso_code(
+            latitude=request.latitude,
+            longitude=request.longitude,
+        )
+
+        ml_features = self.ml_context_service.get_country_features(
+            country_iso
+        )
 
         # Call the inference service and unpack numeric prediction + explanation
         _prediction = self.ml_inference.predict(ml_features)

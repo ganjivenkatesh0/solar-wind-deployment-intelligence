@@ -14,6 +14,7 @@ from app.services.machine_learning.contextual_features import (
     MLContextualFeatureService,
 )
 from app.services.machine_learning.country_resolver import CountryResolver
+from app.services.sentinel2_service import Sentinel2Service
 from app.services.feasibility.feasibility_engine import FeasibilityEngine
 
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
@@ -68,6 +69,7 @@ class AnalysisPipelineService:
         self.ml_inference = RenewableModelInference()
         self.ml_context_service = MLContextualFeatureService()
         self.country_resolver = CountryResolver()
+        self.sentinel2_service = Sentinel2Service()
         self.feasibility_engine = FeasibilityEngine()
 
     def analyze_site(self, request: AnalysisRequest) -> AnalysisResponse:
@@ -223,7 +225,18 @@ class AnalysisPipelineService:
             roi=roi,
         )
 
-        # Step 10: Calculate Overall Site Score
+        # Step 10: Sentinel-2 Land-Cover Intelligence
+        sentinel2_analysis = {
+            "status": "not_available",
+            "source": "Sentinel-2 / EuroSAT",
+            "reason": (
+                "The current EuroSAT dataset provides land-cover classes "
+                "but does not provide coordinate-specific classification "
+                "for the requested analysis location."
+            ),
+        }
+
+        # Step 11: Calculate Overall Site Score
         score_result = calculate_overall_score(
             renewable=renewable,
             terrain=terrain,
@@ -326,6 +339,7 @@ class AnalysisPipelineService:
                 "financial_analysis": financial_analysis,
                 "optimization": deployment_plan.model_dump(),
             },
+            sentinel2=sentinel2_analysis,
         )
 
     

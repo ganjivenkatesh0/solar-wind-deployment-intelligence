@@ -159,38 +159,19 @@ class AnalysisPipelineService:
             road_distance,
         )
 
-        # Step 6: Environmental & Economic Scores
+        # Step 6: Environmental Intelligence
         environmental = environmental_score(
             solar_irradiance=solar_features["solar_irradiance"],
             temperature=solar_features["temperature"],
             relative_humidity=solar_features["relative_humidity"],
         )
-        economic = economic_score(80.0)
 
-
-        # Step 7: Calculate Overall Site Score
-        score_result = calculate_overall_score(
-            renewable=renewable,
-            terrain=terrain,
-            infrastructure=infrastructure,
-            environmental=environmental,
-            economic=economic,
-        )
-
-        renewable = score_result["renewable_score"]
-        terrain = score_result["terrain_score"]
-        infrastructure = score_result["infrastructure_score"]
-        environmental = score_result["environmental_score"]
-        economic = score_result["economic_score"]
-        overall_site_score = score_result["overall_score"]
-
-                # Step 8: Temporary deployment type
+        # Step 7: Deployment and Energy Estimation
         deployment_type = "HYBRID"
 
-            # Temporary installed capacity (MW)
+        # Temporary installed capacity (MW)
         installed_capacity = 50.0
 
-                # Step 9: Estimate annual energy generation
         wind_capacity_factor = wind_assessment["capacity_factor"] / 100.0
         energy_estimation = estimate_hybrid_energy_yield(
             installed_capacity=installed_capacity,
@@ -200,7 +181,7 @@ class AnalysisPipelineService:
         )
         energy_estimation["deployment_type"] = deployment_type
 
-        # Step 10: Financial Analysis
+        # Step 8: Financial Analysis
         annual_revenue = estimate_annual_revenue(
             annual_energy_yield_mwh=energy_estimation["total_energy"],
             electricity_tariff_inr_per_kwh=DEFAULT_ELECTRICITY_TARIFF_INR_PER_KWH,
@@ -229,7 +210,29 @@ class AnalysisPipelineService:
             "roi": roi,
         }
 
-        # Step 10: Temporary Solar and Wind Scores
+        # Step 9: Economic Intelligence
+        economic = economic_score(
+            payback_period=payback_period,
+            roi=roi,
+        )
+
+        # Step 10: Calculate Overall Site Score
+        score_result = calculate_overall_score(
+            renewable=renewable,
+            terrain=terrain,
+            infrastructure=infrastructure,
+            environmental=environmental,
+            economic=economic,
+        )
+
+        renewable = score_result["renewable_score"]
+        terrain = score_result["terrain_score"]
+        infrastructure = score_result["infrastructure_score"]
+        environmental = score_result["environmental_score"]
+        economic = score_result["economic_score"]
+        overall_site_score = score_result["overall_score"]
+
+        # Step 11: Solar and Wind Scores for Deployment Recommendation
         solar_score = renewable
         wind_score = renewable
 

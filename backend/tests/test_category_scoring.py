@@ -64,7 +64,34 @@ def test_environmental_score_changes_with_conditions():
     assert favorable > unfavorable
 
 
+def test_economic_score():
+    assert economic_score(
+        payback_period=2.0,
+        roi=150.0,
+    ) == pytest.approx(77.5)
+
+
 def test_economic_score_bounds():
-    assert economic_score(81.0) == 81.0
-    assert economic_score(-3.0) == 0.0
-    assert economic_score(150.0) == 100.0
+    assert economic_score(
+        payback_period=12.0,
+        roi=-10.0,
+    ) == pytest.approx(0.0)
+
+    assert economic_score(
+        payback_period=0.0,
+        roi=250.0,
+    ) == pytest.approx(100.0)
+
+
+def test_economic_score_improves_with_better_financial_conditions():
+    favorable = economic_score(
+        payback_period=2.0,
+        roi=150.0,
+    )
+
+    unfavorable = economic_score(
+        payback_period=9.0,
+        roi=20.0,
+    )
+
+    assert favorable > unfavorable

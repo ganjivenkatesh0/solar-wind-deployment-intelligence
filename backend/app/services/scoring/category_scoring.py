@@ -62,6 +62,23 @@ def environmental_score(
     return round(score, 2)
 
 
-def economic_score(score: float) -> float:
-    """Return a bounded economic feasibility score."""
-    return max(0.0, min(score, 100.0))
+def economic_score(
+    payback_period: float,
+    roi: float,
+) -> float:
+    """Calculate economic feasibility from payback period and ROI.
+
+    Lower payback periods and higher ROI indicate stronger economic
+    feasibility.
+    """
+    payback_score = max(
+        0.0,
+        min((10.0 - payback_period) / 10.0 * 100.0, 100.0),
+    )
+
+    roi_score = max(
+        0.0,
+        min(roi / 200.0 * 100.0, 100.0),
+    )
+
+    return round((payback_score + roi_score) / 2, 2)

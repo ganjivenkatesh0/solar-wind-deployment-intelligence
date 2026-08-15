@@ -1,0 +1,37 @@
+/**
+ * Single source of truth for the platform icon set (lucide-react, outline style).
+ * Always import domain icons from here so no screen mixes icon styles.
+ */
+export {
+  Sun as SolarIcon,
+  Wind as WindIcon,
+  Leaf as HybridIcon,
+  MapPin as LocationIcon,
+  Map as MapIcon,
+  Network as InfrastructureIcon,
+  ShieldCheck as FeasibilityIcon,
+  Wallet as FinancialIcon,
+  Sprout as EnvironmentalIcon,
+  BrainCircuit as AiIcon,
+  Settings as SettingsIcon,
+  FileText as ReportIcon,
+  Download as DownloadIcon,
+  Bell as NotificationIcon,
+  User as UserIcon,
+  Mountain as TerrainIcon,
+  Gauge as ScoreIcon,
+  TrendingUp as TrendIcon,
+  CalendarDays as DateIcon,
+  Zap as EnergyIcon,
+  LandPlot as LandIcon,
+  Star as PriorityIcon,
+  Search as SearchIcon,
+  Filter as FilterIcon,
+  Eye as ViewIcon,
+  Trash2 as DeleteIcon,
+  RefreshCw as RetryIcon,
+  Copy as DuplicateIcon,
+  CircleAlert as AlertIcon,
+  CircleCheck as CheckIcon,
+  ChevronRight as ChevronRightIcon,
+} from "lucide-react";

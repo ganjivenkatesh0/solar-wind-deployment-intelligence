@@ -36,12 +36,18 @@ def analyze_site(request: AnalysisRequest):
         return analysis_service.analyze_site(request)
 
     except ValueError as exc:
-        if "outside the SRTM raster coverage" in str(exc):
+        message = str(exc)
+
+        if (
+            "Terrain" in message
+            or "SRTM" in message
+            or "Country code" in message
+        ):
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Terrain data is unavailable for the selected location. "
-                    "Please choose a location within the supported SRTM coverage."
+                    "Terrain or location data is unavailable for the selected "
+                    "coordinates. Please select a valid land location."
                 ),
             ) from exc
 

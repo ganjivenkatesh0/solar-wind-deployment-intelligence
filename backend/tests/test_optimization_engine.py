@@ -18,7 +18,7 @@ def test_generate_hybrid_plan():
     result = DeploymentPlanService.generate_plan(request)
 
     assert result.recommended_technology == "Hybrid"
-    assert result.recommended_capacity_mw == 120
+    assert result.recommended_capacity_mw == 1.0
     assert result.expansion_status == "Expandable"
 
 

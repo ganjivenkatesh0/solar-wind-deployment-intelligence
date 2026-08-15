@@ -31,6 +31,7 @@ import { runAnalysis as runBackendAnalysis } from "@/lib/api/analysis";
 
 import { PageContainer, PageHeader } from "@/components/layout/page-container";
 import { ReviewSidebar, type SummaryRow } from "@/components/analysis/review-sidebar";
+import { ErrorState } from "@/components/ui/states";
 import { StepProgress } from "@/components/analysis/step-progress";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +49,6 @@ import {
   projectTypeOptions,
   riskToleranceOptions,
   analysisFocusOptions,
-  selectedLocationInfo,
   saveDraft,
   saveParametersDraft,
   savePreferencesDraft,
@@ -196,7 +196,7 @@ function ReviewPage() {
         Icon: MapPin,
         iconClass: "text-success",
         label: "Location",
-        value: selectedLocationInfo.name,
+        value: site.locationName,
       },
       {
         Icon: LandPlot,
@@ -282,17 +282,22 @@ function ReviewPage() {
           longitude: Number(site.longitude),
           land_area_hectares: Number(site.landArea.replace(/,/g, "")),
           available_budget: Number(site.budget.replace(/,/g, "")),
-          location_name: selectedLocationInfo.name,
+          location_name: site.locationName,
         }),
       );
 
       toast.success("Analysis completed — opening your results.");
       navigate({ to: "/dashboard" });
     } catch (error) {
-      const message =
+      const rawMessage =
         error instanceof Error
           ? error.message
           : "We couldn't run the analysis. Please try again.";
+
+      const message =
+        rawMessage === "Failed to fetch"
+          ? "We couldn't connect to the analysis service. Please make sure the backend is running and try again."
+          : rawMessage;
 
       setRunning(false);
       setError(message);
@@ -340,7 +345,7 @@ function ReviewPage() {
                 />
                 <div className="mt-4 space-y-3">
                   <Row Icon={MapPin} iconClass="text-success" label="Location">
-                    <span className="block">{selectedLocationInfo.name}</span>
+                    <span className="block">{site.locationName}</span>
                     <span className="text-helper block">
                       {formatCoordinates(site.latitude, site.longitude)}
                     </span>
@@ -479,9 +484,15 @@ function ReviewPage() {
           </section>
 
           {error ? (
-            <p role="alert" className="text-label text-destructive">
-              {error}
-            </p>
+            <ErrorState
+              title="Analysis couldn't be completed"
+              description={error}
+              onRetry={() => {
+                setError(null);
+                void runAnalysis();
+              }}
+              className="border-error/20 bg-error-soft/30"
+            />
           ) : null}
 
           <div className="flex flex-wrap items-center justify-between gap-3">

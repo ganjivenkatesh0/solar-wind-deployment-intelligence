@@ -24,9 +24,9 @@ import {
   formatThousands,
   landUseOptions,
   loadDraft,
+  resolveLocation,
   sanitizeDecimal,
   saveDraft,
-  selectedLocationInfo,
   type AnalysisDraft,
 } from "@/lib/analysis-form";
 
@@ -175,12 +175,62 @@ function NewAnalysisPage() {
                     <LocationPickerMap
                       latitude={mapLat}
                       longitude={mapLon}
-                      onPick={(nextLat, nextLon) =>
+                      onPick={async (nextLat, nextLon) => {
+                        const latitude = nextLat.toFixed(4);
+                        const longitude = nextLon.toFixed(4);
+
+                        // Immediately update coordinates so the map/UI responds.
                         update({
-                          latitude: nextLat.toFixed(4),
-                          longitude: nextLon.toFixed(4),
-                        })
-                      }
+                          latitude,
+                          longitude,
+                          locationName: `${latitude}, ${longitude}`,
+                          elevation: "—",
+                          terrainType: "—",
+                          timezone: "—",
+                        });
+
+                        // Reverse-geocode the selected coordinates and update
+                        // the complete site-location information.
+                        try {
+                          const resolved = await resolveLocation(nextLat, nextLon);
+
+                          update({
+                            latitude,
+                            longitude,
+                            locationName: resolved.name,
+                            elevation: resolved.elevation,
+                            terrainType: resolved.terrainType,
+                            timezone: resolved.timezone,
+                          });
+
+                          saveDraft({
+                            ...draft,
+                            latitude,
+                            longitude,
+                            locationName: resolved.name,
+                            elevation: resolved.elevation,
+                            terrainType: resolved.terrainType,
+                            timezone: resolved.timezone,
+                          });
+                        } catch (error) {
+                          console.error(
+                            "Failed to resolve selected map location:",
+                            error,
+                          );
+
+                          // Never keep the previous location name after a
+                          // different map location has been selected.
+                          saveDraft({
+                            ...draft,
+                            latitude,
+                            longitude,
+                            locationName: `${latitude}, ${longitude}`,
+                            elevation: "—",
+                            terrainType: "—",
+                            timezone: "—",
+                          });
+                        }
+                      }}
                     />
                   </Suspense>
                 </ClientOnly>
@@ -190,7 +240,7 @@ function NewAnalysisPage() {
                   <LocationIcon className="text-primary size-4 shrink-0" />
                   Selected Location
                 </p>
-                <p className="text-label mt-3 font-semibold">{selectedLocationInfo.name}</p>
+                <p className="text-label mt-3 font-semibold">{draft.locationName}</p>
                 <p className="text-helper mt-0.5">
                   {formatCoordinates(draft.latitude, draft.longitude)}
                 </p>
@@ -198,16 +248,16 @@ function NewAnalysisPage() {
                   <div>
                     <dt className="text-helper">Elevation (from SRTM)</dt>
                     <dd className="text-label text-primary font-semibold">
-                      {selectedLocationInfo.elevation}
+                      {draft.elevation}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-helper">Terrain Type</dt>
-                    <dd className="text-label">{selectedLocationInfo.terrainType}</dd>
+                    <dd className="text-label">{draft.terrainType}</dd>
                   </div>
                   <div>
                     <dt className="text-helper">Timezone</dt>
-                    <dd className="text-label">{selectedLocationInfo.timezone}</dd>
+                    <dd className="text-label">{draft.timezone}</dd>
                   </div>
                 </dl>
               </div>

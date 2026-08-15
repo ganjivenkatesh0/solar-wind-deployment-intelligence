@@ -55,6 +55,7 @@ class DeploymentPlanService:
         capacity = CapacityPlanner.recommend_capacity(
             land_area_hectares=request.land_area_hectares,
             overall_site_score=request.overall_site_score,
+            available_budget=request.available_budget,
         )
 
         # -----------------------------

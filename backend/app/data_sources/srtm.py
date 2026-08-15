@@ -8,9 +8,12 @@ import math
 
 import numpy as np
 import rasterio
+import requests
 
 
 class SRTMClient:
+    REMOTE_TERRAIN_URL = "https://api.opentopodata.org/v1/srtm30m"
+    REMOTE_TIMEOUT_SECONDS = 20
     """Client for retrieving elevation and terrain data from an SRTM raster."""
 
     def __init__(
@@ -31,142 +34,321 @@ class SRTMClient:
 
         self.raster_path = Path(raster_path)
 
-    def get_elevation(
+    def get_elevation(self, latitude: float, longitude: float) -> dict:
+        """
+        Return location-specific elevation.
+
+        Local SRTM is preferred when the coordinate is inside the bundled
+        raster. If the local raster does not cover the coordinate, use the
+        OpenTopoData SRTM30m service as a remote fallback.
+        """
+        if not (-90 <= latitude <= 90):
+            raise ValueError("Latitude must be between -90 and 90.")
+
+        if not (-180 <= longitude <= 180):
+            raise ValueError("Longitude must be between -180 and 180.")
+
+        try:
+            with rasterio.open(self.raster_path) as src:
+                if (
+                    src.bounds.left <= longitude <= src.bounds.right
+                    and src.bounds.bottom <= latitude <= src.bounds.top
+                ):
+                    row, col = src.index(longitude, latitude)
+                    elevation = float(src.read(1)[row, col])
+
+                    if elevation != src.nodata:
+                        return {
+                            "elevation": round(elevation, 2),
+                            "unit": "m",
+                            "source": "SRTM",
+                            "latitude": latitude,
+                            "longitude": longitude,
+                        }
+        except (IndexError, rasterio.errors.RasterioError):
+            pass
+
+        return self._get_remote_elevation(latitude, longitude)
+
+    def _get_remote_elevations(
         self,
-        latitude: float,
-        longitude: float,
-    ) -> dict[str, Any]:
+        locations: list[tuple[float, float]],
+    ) -> dict[tuple[float, float], float]:
         """
-        Retrieve elevation for a geographic coordinate.
+        Retrieve multiple SRTM elevations using one OpenTopoData request.
 
-        Elevation is returned in metres.
+        This avoids making several rapid requests when calculating remote
+        terrain slope.
         """
+        if not locations:
+            return {}
 
-        self._validate_coordinates(latitude, longitude)
+        # Remove duplicates while preserving order.
+        unique_locations = list(dict.fromkeys(locations))
 
-        with self._open_raster() as src:
-            self._validate_coverage(src, latitude, longitude)
+        location_string = "|".join(
+            f"{latitude},{longitude}"
+            for latitude, longitude in unique_locations
+        )
 
-            value = next(
-                src.sample([(longitude, latitude)])
-            )[0]
+        response = requests.get(
+            self.REMOTE_TERRAIN_URL,
+            params={"locations": location_string},
+            headers={
+                "User-Agent": "SolarWindDeploymentIntelligence/1.0"
+            },
+            timeout=self.REMOTE_TIMEOUT_SECONDS,
+        )
 
-            elevation = float(value)
+        if response.status_code == 429:
+            raise ValueError(
+                "Remote terrain service is temporarily rate limited."
+            )
 
-            if self._is_nodata(src, elevation):
-                raise RuntimeError(
-                    "SRTM returned NoData for "
-                    "the requested location."
-                )
+        response.raise_for_status()
 
-            return {
-                "elevation": round(elevation, 2),
-                "unit": "m",
-                "source": "SRTM",
-                "latitude": latitude,
-                "longitude": longitude,
-            }
+        payload = response.json()
+        results = payload.get("results") or []
 
-    def get_slope(
-        self,
-        latitude: float,
-        longitude: float,
-    ) -> dict[str, Any]:
-        """
-        Calculate local terrain slope from a 3x3 SRTM DEM neighborhood.
+        if len(results) != len(unique_locations):
+            raise ValueError(
+                "Terrain elevation is unavailable for the selected location."
+            )
 
-        Slope is calculated using the Horn method and returned in degrees.
-        """
+        elevations = {}
 
-        self._validate_coordinates(latitude, longitude)
+        for location, result in zip(unique_locations, results):
+            elevation = result.get("elevation")
 
-        with self._open_raster() as src:
-            self._validate_coverage(src, latitude, longitude)
-
-            row, col = src.index(longitude, latitude)
-
-            if (
-                row <= 0
-                or row >= src.height - 1
-                or col <= 0
-                or col >= src.width - 1
-            ):
+            if elevation is None:
                 raise ValueError(
-                    "Requested coordinates are too close to "
-                    "the SRTM raster boundary for slope calculation."
+                    "Terrain elevation is unavailable for the selected location."
                 )
 
-            window = rasterio.windows.Window(
-                col_off=col - 1,
-                row_off=row - 1,
-                width=3,
-                height=3,
+            elevations[location] = float(elevation)
+
+        return elevations
+
+    def _get_remote_elevations(
+        self,
+        locations: list[tuple[float, float]],
+    ) -> dict[tuple[float, float], float]:
+        """
+        Retrieve multiple SRTM elevations using one OpenTopoData request.
+
+        This avoids making several rapid requests when calculating remote
+        terrain slope.
+        """
+        if not locations:
+            return {}
+
+        # Remove duplicates while preserving order.
+        unique_locations = list(dict.fromkeys(locations))
+
+        location_string = "|".join(
+            f"{latitude},{longitude}"
+            for latitude, longitude in unique_locations
+        )
+
+        response = requests.get(
+            self.REMOTE_TERRAIN_URL,
+            params={"locations": location_string},
+            headers={
+                "User-Agent": "SolarWindDeploymentIntelligence/1.0"
+            },
+            timeout=self.REMOTE_TIMEOUT_SECONDS,
+        )
+
+        if response.status_code == 429:
+            raise ValueError(
+                "Remote terrain service is temporarily rate limited."
             )
 
-            data = src.read(1, window=window).astype(float)
+        response.raise_for_status()
 
-            if data.shape != (3, 3):
-                raise RuntimeError(
-                    "Unable to retrieve the required 3x3 "
-                    "SRTM neighborhood."
-                )
+        payload = response.json()
+        results = payload.get("results") or []
 
-            if src.nodata is not None:
-                if np.any(data == src.nodata):
-                    raise RuntimeError(
-                        "SRTM returned NoData in the terrain "
-                        "neighborhood."
-                    )
-
-            if np.any(~np.isfinite(data)):
-                raise RuntimeError(
-                    "SRTM returned invalid elevation values "
-                    "in the terrain neighborhood."
-                )
-
-            # SRTM is EPSG:4326, so raster resolution is in degrees.
-            # Convert degrees to approximate metres at the requested latitude.
-            latitude_m_per_degree = 111_320.0
-            longitude_m_per_degree = (
-                111_320.0 * math.cos(math.radians(latitude))
+        if len(results) != len(unique_locations):
+            raise ValueError(
+                "Terrain elevation is unavailable for the selected location."
             )
 
-            cell_size_y = abs(src.transform.e) * latitude_m_per_degree
-            cell_size_x = (
-                abs(src.transform.a) * longitude_m_per_degree
-            )
+        elevations = {}
 
-            if cell_size_x <= 0 or cell_size_y <= 0:
-                raise RuntimeError(
-                    "Invalid SRTM raster resolution."
+        for location, result in zip(unique_locations, results):
+            elevation = result.get("elevation")
+
+            if elevation is None:
+                raise ValueError(
+                    "Terrain elevation is unavailable for the selected location."
                 )
 
-            # Horn method.
-            dz_dx = (
-                (data[0, 2] + 2 * data[1, 2] + data[2, 2])
-                - (data[0, 0] + 2 * data[1, 0] + data[2, 0])
-            ) / (8.0 * cell_size_x)
+            elevations[location] = float(elevation)
 
-            dz_dy = (
-                (data[2, 0] + 2 * data[2, 1] + data[2, 2])
-                - (data[0, 0] + 2 * data[0, 1] + data[0, 2])
-            ) / (8.0 * cell_size_y)
+        return elevations
 
-            slope_degrees = math.degrees(
-                math.atan(
-                    math.sqrt(
-                        dz_dx**2 + dz_dy**2
-                    )
-                )
+    def _get_remote_elevation(
+        self,
+        latitude: float,
+        longitude: float,
+    ) -> dict:
+        """
+        Retrieve one remote SRTM elevation.
+        """
+        elevations = self._get_remote_elevations(
+            [(latitude, longitude)]
+        )
+
+        return {
+            "elevation": round(
+                elevations[(latitude, longitude)],
+                2,
+            ),
+            "unit": "m",
+            "source": "OpenTopoData SRTM30m",
+            "latitude": latitude,
+            "longitude": longitude,
+        }
+
+    def get_slope(self, latitude: float, longitude: float) -> dict:
+        """
+        Return location-specific terrain slope.
+
+        Local SRTM is used when available. Otherwise, remote SRTM30m
+        elevations are sampled in one batched request.
+        """
+        import math
+
+        try:
+            with rasterio.open(self.raster_path) as src:
+                if (
+                    src.bounds.left <= longitude <= src.bounds.right
+                    and src.bounds.bottom <= latitude <= src.bounds.top
+                ):
+                    row, col = src.index(longitude, latitude)
+
+                    window = 1
+                    r0 = max(0, row - window)
+                    r1 = min(src.height, row + window + 1)
+                    c0 = max(0, col - window)
+                    c1 = min(src.width, col + window + 1)
+
+                    raster = src.read(1)
+                    elevations = raster[r0:r1, c0:c1]
+
+                    valid = elevations[elevations != src.nodata]
+
+                    if valid.size > 1:
+                        elevation_range = float(
+                            valid.max() - valid.min()
+                        )
+
+                        pixel_lat_km = abs(
+                            float(src.res[1])
+                        ) * 111.32
+
+                        pixel_lon_km = (
+                            abs(float(src.res[0]))
+                            * 111.32
+                            * max(
+                                abs(
+                                    math.cos(
+                                        math.radians(latitude)
+                                    )
+                                ),
+                                0.01,
+                            )
+                        )
+
+                        horizontal_km = max(
+                            (
+                                (2 * pixel_lat_km) ** 2
+                                + (2 * pixel_lon_km) ** 2
+                            ) ** 0.5,
+                            0.001,
+                        )
+
+                        slope_degrees = math.degrees(
+                            math.atan(
+                                elevation_range
+                                / (horizontal_km * 1000)
+                            )
+                        )
+
+                        return {
+                            "slope": round(
+                                max(slope_degrees, 0.0),
+                                2,
+                            ),
+                            "unit": "degrees",
+                            "source": "SRTM",
+                            "latitude": latitude,
+                            "longitude": longitude,
+                        }
+
+        except (IndexError, rasterio.errors.RasterioError):
+            pass
+
+        # ----------------------------------------------------
+        # Remote fallback.
+        # One request containing all four neighbouring points.
+        # ----------------------------------------------------
+
+        delta = 0.01
+
+        west = (latitude, longitude - delta)
+        east = (latitude, longitude + delta)
+        south = (latitude - delta, longitude)
+        north = (latitude + delta, longitude)
+
+        elevations = self._get_remote_elevations(
+            [west, east, south, north]
+        )
+
+        west_elevation = elevations[west]
+        east_elevation = elevations[east]
+        south_elevation = elevations[south]
+        north_elevation = elevations[north]
+
+        lat_distance_m = delta * 111_320.0
+
+        lon_distance_m = (
+            delta
+            * 111_320.0
+            * max(
+                abs(math.cos(math.radians(latitude))),
+                0.01,
             )
+        )
 
-            return {
-                "slope": round(slope_degrees, 2),
-                "unit": "degrees",
-                "source": "SRTM",
-                "latitude": latitude,
-                "longitude": longitude,
-            }
+        east_west_gradient = abs(
+            east_elevation - west_elevation
+        ) / (2 * lon_distance_m)
+
+        north_south_gradient = abs(
+            north_elevation - south_elevation
+        ) / (2 * lat_distance_m)
+
+        gradient = max(
+            east_west_gradient,
+            north_south_gradient,
+        )
+
+        slope_degrees = math.degrees(
+            math.atan(gradient)
+        )
+
+        return {
+            "slope": round(
+                max(slope_degrees, 0.0),
+                2,
+            ),
+            "unit": "degrees",
+            "source": "OpenTopoData SRTM30m",
+            "latitude": latitude,
+            "longitude": longitude,
+        }
 
     def get_terrain_data(
         self,

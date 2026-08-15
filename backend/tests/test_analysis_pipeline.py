@@ -61,7 +61,10 @@ def test_analysis_pipeline():
         assert result.deployment_plan["energy_estimation"]["solar_energy"] >= 0.0
         assert result.deployment_plan["energy_estimation"]["wind_energy"] >= 0.0
         assert result.deployment_plan["energy_estimation"]["total_energy"] >= 0.0
-        assert result.deployment_plan["energy_estimation"]["deployment_type"] == "HYBRID"
+        assert (
+            result.deployment_plan["energy_estimation"]["deployment_type"]
+            == result.recommended_deployment
+        )
 
 
 def test_analysis_pipeline_feasibility_occurs_before_energy_estimation(monkeypatch):

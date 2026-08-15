@@ -205,7 +205,6 @@ class AnalysisPipelineService:
             wind_capacity_factor=wind_capacity_factor,
             system_efficiency=DEFAULT_SYSTEM_EFFICIENCY,
         )
-        energy_estimation["deployment_type"] = "HYBRID"
 
         # Step 8: Initial Financial Analysis
         annual_revenue = estimate_annual_revenue(
@@ -332,6 +331,9 @@ class AnalysisPipelineService:
                 recommendation_request
             )
         )
+
+        # Keep the energy result aligned with the final recommendation.
+        energy_estimation["deployment_type"] = recommendation.deployment_type
 
         # Step 14: Analyze future expansion potential
         expansion_status = self.expansion_analysis.analyze_expansion(

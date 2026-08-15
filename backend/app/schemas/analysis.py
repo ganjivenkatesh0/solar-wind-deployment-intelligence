@@ -68,5 +68,3 @@ class AnalysisResponse(BaseModel):
     # Extended intelligence
     deployment_plan: dict
     sentinel2: dict | None = None
-
-    deployment_plan: dict

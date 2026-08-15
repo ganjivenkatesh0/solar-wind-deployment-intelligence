@@ -11,6 +11,10 @@ export type AnalysisDraft = {
   landArea: string;
   budget: string;
   landUseType: string;
+  locationName: string;
+  elevation: string;
+  terrainType: string;
+  timezone: string;
 };
 
 export const defaultAnalysisDraft: AnalysisDraft = {
@@ -20,6 +24,10 @@ export const defaultAnalysisDraft: AnalysisDraft = {
   landArea: "40.0",
   budget: "5,000,000",
   landUseType: "open-land",
+  locationName: "Hyderabad, Telangana, India",
+  elevation: "—",
+  terrainType: "—",
+  timezone: "—",
 };
 
 export const landUseOptions = [
@@ -99,10 +107,91 @@ export const analysisTips = [
 /** Selected-location metadata shown next to the map. */
 export const selectedLocationInfo = {
   name: "Hyderabad, Telangana, India",
-  elevation: "607 m",
-  terrainType: "Urban / Semi-Urban",
-  timezone: "Asia/Kolkata (UTC +5:30)",
+  elevation: "—",
+  terrainType: "—",
+  timezone: "—",
 };
+
+export type ResolvedLocation = {
+  name: string;
+  elevation: string;
+  terrainType: string;
+  timezone: string;
+};
+
+export async function resolveLocation(
+  latitude: number,
+  longitude: number,
+): Promise<ResolvedLocation> {
+  const fallback: ResolvedLocation = {
+    name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+    elevation: "—",
+    terrainType: "—",
+    timezone: "—",
+  };
+
+  try {
+    const params = new URLSearchParams({
+      lat: String(latitude),
+      lon: String(longitude),
+      format: "jsonv2",
+      zoom: "18",
+      addressdetails: "1",
+    });
+
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      return fallback;
+    }
+
+    const data = (await response.json()) as {
+      display_name?: string;
+      address?: {
+        city?: string;
+        town?: string;
+        village?: string;
+        municipality?: string;
+        county?: string;
+        state?: string;
+        country?: string;
+      };
+    };
+
+    const address = data.address ?? {};
+
+    const locality =
+      address.city ??
+      address.town ??
+      address.village ??
+      address.municipality ??
+      address.county;
+
+    const parts = [
+      locality,
+      address.state,
+      address.country,
+    ].filter(Boolean);
+
+    return {
+      name: parts.length > 0
+        ? parts.join(", ")
+        : data.display_name ?? fallback.name,
+      elevation: "—",
+      terrainType: "—",
+      timezone: "—",
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 export function formatCoordinates(latitude: string, longitude: string) {
   const lat = Number(latitude);

@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { runAnalysis as runBackendAnalysis } from "@/lib/api/analysis";
+
 import { PageContainer, PageHeader } from "@/components/layout/page-container";
 import { ReviewSidebar, type SummaryRow } from "@/components/analysis/review-sidebar";
 import { StepProgress } from "@/components/analysis/step-progress";
@@ -264,14 +266,37 @@ function ReviewPage() {
     setRunning(true);
     persistAll();
     try {
-      // No analysis backend is connected to this workflow yet — the inputs are
-      // persisted locally and the user is taken to the results screen.
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      toast.success("Analysis submitted — opening your results.");
+      const result = await runBackendAnalysis({
+        latitude: Number(site.latitude),
+        longitude: Number(site.longitude),
+        land_area_hectares: Number(site.landArea.replace(/,/g, "")),
+        available_budget: Number(site.budget.replace(/,/g, "")),
+      });
+
+      sessionStorage.setItem("latestAnalysisResult", JSON.stringify(result));
+
+      sessionStorage.setItem(
+        "latestAnalysisRequest",
+        JSON.stringify({
+          latitude: Number(site.latitude),
+          longitude: Number(site.longitude),
+          land_area_hectares: Number(site.landArea.replace(/,/g, "")),
+          available_budget: Number(site.budget.replace(/,/g, "")),
+          location_name: selectedLocationInfo.name,
+        }),
+      );
+
+      toast.success("Analysis completed — opening your results.");
       navigate({ to: "/dashboard" });
-    } catch {
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "We couldn't run the analysis. Please try again.";
+
       setRunning(false);
-      setError("We couldn't run the analysis. Please try again.");
+      setError(message);
+      toast.error(message);
     }
   };
 

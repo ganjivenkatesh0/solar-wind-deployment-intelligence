@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.analysis import router as analysis_router
 from app.api.home import router as home_router
@@ -22,6 +23,14 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Solar & Wind Deployment Intelligence Platform",
     version="0.1.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https://.*\.app\.github\.dev",
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(home_router)

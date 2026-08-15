@@ -1,7 +1,9 @@
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/layout/page-container";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { AiInsightsTab } from "@/components/dashboard/ai-insights/ai-insights-tab";
@@ -25,7 +27,12 @@ import { ResourcesTab } from "@/components/dashboard/resources/resources-tab";
 
 import { SiteLocationCard } from "@/components/dashboard/site-location-card";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
-import { dashboardData } from "@/lib/dashboard-data";
+import {
+  createDashboardData,
+  dashboardData,
+  type LatestAnalysisRequest,
+} from "@/lib/dashboard-data";
+import type { AnalysisResponse } from "@/lib/api/analysis";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -52,10 +59,95 @@ export const Route = createFileRoute("/dashboard")({
 function DashboardPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<DashboardTabId>("overview");
-  const data = dashboardData;
+  const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
+  const [data, setData] = useState<ReturnType<typeof createDashboardData> | null>(null);
+
+  useEffect(() => {
+    try {
+      setLoading(true);
+      setDataError(null);
+
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      const storedResult = sessionStorage.getItem("latestAnalysisResult");
+      const storedRequest = sessionStorage.getItem("latestAnalysisRequest");
+
+      if (!storedResult || !storedRequest) {
+        setData(null);
+        return;
+      }
+
+      const result = JSON.parse(storedResult) as AnalysisResponse;
+      const request = JSON.parse(storedRequest) as LatestAnalysisRequest;
+
+      setData(createDashboardData(result, request));
+    } catch (error) {
+      setData(null);
+      setDataError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't load the latest analysis results."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const notReady = (section: string) => () =>
     toast.info(`${section} details are coming in a later release.`);
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <PageHeader
+          title="Dashboard"
+          description="Overview of your latest renewable energy site analyses."
+        />
+        <LoadingState message="Loading your latest analysis…" className="min-h-[360px]" />
+      </PageContainer>
+    );
+  }
+
+  if (dataError) {
+    return (
+      <PageContainer>
+        <PageHeader
+          title="Dashboard"
+          description="Overview of your latest renewable energy site analyses."
+        />
+        <ErrorState
+          title="Unable to load analysis"
+          description={dataError}
+          onRetry={() => window.location.reload()}
+          className="min-h-[360px]"
+        />
+      </PageContainer>
+    );
+  }
+
+  if (!data) {
+    return (
+      <PageContainer>
+        <PageHeader
+          title="Dashboard"
+          description="Overview of your latest renewable energy site analyses."
+        />
+        <EmptyState
+          title="No analysis available"
+          description="Run a new site analysis to see suitability, energy, feasibility and financial results here."
+          action={
+            <Button onClick={() => navigate({ to: "/new-analysis" })}>
+              Start New Analysis
+            </Button>
+          }
+          className="min-h-[360px]"
+        />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>

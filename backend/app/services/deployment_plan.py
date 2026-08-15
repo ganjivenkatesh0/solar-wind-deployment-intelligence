@@ -48,6 +48,10 @@ class DeploymentPlanService:
         # -----------------------------
         # Capacity Planning
         # -----------------------------
+        # Optimization planning preserves the site's land/suitability
+        # capacity model. Budget-aware capacity is handled by the main
+        # analysis pipeline where the user's available budget is a hard
+        # project constraint.
         capacity = CapacityPlanner.recommend_capacity(
             land_area_hectares=request.land_area_hectares,
             overall_site_score=request.overall_site_score,

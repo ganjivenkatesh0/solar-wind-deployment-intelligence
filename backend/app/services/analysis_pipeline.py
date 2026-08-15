@@ -175,22 +175,39 @@ class AnalysisPipelineService:
             relative_humidity=solar_features["relative_humidity"],
         )
 
-        # Step 7: Deployment and Energy Estimation
-        deployment_type = "HYBRID"
+        # Step 7: Initial Capacity, Energy and Financial Analysis
+        #
+        # Economic score depends on financial results, while final capacity
+        # depends on the overall site score. To avoid a circular dependency,
+        # first calculate a provisional capacity using the non-economic
+        # resource/site scores, then calculate the final capacity after the
+        # first overall suitability score is available.
 
-        # Temporary installed capacity (MW)
-        installed_capacity = 50.0
+        provisional_site_score = (
+            renewable * 0.40
+            + terrain * 0.20
+            + infrastructure * 0.20
+            + environmental * 0.10
+            + 70.0 * 0.10
+        )
+
+        installed_capacity = self.capacity_planner.recommend_capacity(
+            land_area_hectares=request.land_area_hectares,
+            overall_site_score=provisional_site_score,
+            available_budget=request.available_budget,
+        )
 
         wind_capacity_factor = wind_assessment["capacity_factor"] / 100.0
+
         energy_estimation = estimate_hybrid_energy_yield(
             installed_capacity=installed_capacity,
             solar_capacity_factor=DEFAULT_SOLAR_CAPACITY_FACTOR,
             wind_capacity_factor=wind_capacity_factor,
             system_efficiency=DEFAULT_SYSTEM_EFFICIENCY,
         )
-        energy_estimation["deployment_type"] = deployment_type
+        energy_estimation["deployment_type"] = "HYBRID"
 
-        # Step 8: Financial Analysis
+        # Step 8: Initial Financial Analysis
         annual_revenue = estimate_annual_revenue(
             annual_energy_yield_mwh=energy_estimation["total_energy"],
             electricity_tariff_inr_per_kwh=DEFAULT_ELECTRICITY_TARIFF_INR_PER_KWH,
@@ -212,6 +229,11 @@ class AnalysisPipelineService:
             annual_revenue_inr=annual_revenue,
         )
 
+        economic = economic_score(
+            payback_period=payback_period,
+            roi=roi,
+        )
+
         financial_analysis = {
             "annual_revenue": annual_revenue,
             "estimated_project_cost": estimated_project_cost,
@@ -219,13 +241,7 @@ class AnalysisPipelineService:
             "roi": roi,
         }
 
-        # Step 9: Economic Intelligence
-        economic = economic_score(
-            payback_period=payback_period,
-            roi=roi,
-        )
-
-        # Step 10: Sentinel-2 Land-Cover Intelligence
+        # Step 9: Sentinel-2 Land-Cover Intelligence
         sentinel2_analysis = {
             "status": "not_available",
             "source": "Sentinel-2 / EuroSAT",
@@ -236,7 +252,7 @@ class AnalysisPipelineService:
             ),
         }
 
-        # Step 11: Calculate Overall Site Score
+        # Step 10: First Overall Site Score
         score_result = calculate_overall_score(
             renewable=renewable,
             terrain=terrain,
@@ -252,7 +268,7 @@ class AnalysisPipelineService:
         economic = score_result["economic_score"]
         overall_site_score = score_result["overall_score"]
 
-        # Step 11: Solar and Wind Scores for Deployment Recommendation
+        # Step 11: Deployment Recommendation
         solar_score = renewable
         wind_score = renewable
 
@@ -272,31 +288,63 @@ class AnalysisPipelineService:
             )
         )
 
-        recommendation = (
-    self.deployment_service.generate_recommendation(
-        recommendation_request
-    )
-)
-
-                # Step 11: Calculate recommended installation capacity
+        # Step 12: Final Recommended Capacity
         recommended_capacity = self.capacity_planner.recommend_capacity(
             land_area_hectares=request.land_area_hectares,
             overall_site_score=overall_site_score,
             available_budget=request.available_budget,
         )
 
-                # Step 12: Analyze future expansion potential
+        # Step 13: Final Economic and Site Score
+        economic = economic_score(
+            payback_period=payback_period,
+            roi=roi,
+        )
+
+        score_result = calculate_overall_score(
+            renewable=renewable,
+            terrain=terrain,
+            infrastructure=infrastructure,
+            environmental=environmental,
+            economic=economic,
+        )
+
+        renewable = score_result["renewable_score"]
+        terrain = score_result["terrain_score"]
+        infrastructure = score_result["infrastructure_score"]
+        environmental = score_result["environmental_score"]
+        economic = score_result["economic_score"]
+        overall_site_score = score_result["overall_score"]
+
+        # Refresh the recommendation using the final site score.
+        recommendation_request = DeploymentRecommendationRequest(
+            overall_site_score=overall_site_score,
+            solar_score=renewable,
+            wind_score=renewable,
+            terrain_score=terrain,
+            infrastructure_score=infrastructure,
+            estimated_solar_energy=energy_estimation["solar_energy"],
+            estimated_wind_energy=energy_estimation["wind_energy"],
+        )
+
+        recommendation = (
+            self.deployment_service.generate_recommendation(
+                recommendation_request
+            )
+        )
+
+        # Step 14: Analyze future expansion potential
         expansion_status = self.expansion_analysis.analyze_expansion(
             land_area_hectares=request.land_area_hectares,
             infrastructure_score=infrastructure,
             overall_site_score=overall_site_score,
         )
 
-                # Step 13: Create optimization request
+        # Step 15: Create optimization request
         optimization_request = OptimizationRequest(
             overall_site_score=overall_site_score,
-            solar_score=solar_score,
-            wind_score=wind_score,
+            solar_score=renewable,
+            wind_score=renewable,
             terrain_score=terrain,
             infrastructure_score=infrastructure,
             estimated_solar_energy=energy_estimation["solar_energy"],
@@ -305,12 +353,12 @@ class AnalysisPipelineService:
             available_budget=request.available_budget,
         )
 
-                # Step 14: Generate deployment plan
+        # Step 16: Generate deployment plan
         deployment_plan = self.deployment_plan.generate_plan(
             optimization_request
         )
 
-                # Step 15: Return complete analysis response
+        # Step 17: Return complete analysis response
         return AnalysisResponse(
             solar_features=solar_features,
             ml_prediction={

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
 from app.services.analysis_pipeline import AnalysisPipelineService
@@ -32,4 +32,17 @@ def analyze_site(request: AnalysisRequest):
     - Expansion analysis
     - Deployment optimization
     """
-    return analysis_service.analyze_site(request)
+    try:
+        return analysis_service.analyze_site(request)
+
+    except ValueError as exc:
+        if "outside the SRTM raster coverage" in str(exc):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Terrain data is unavailable for the selected location. "
+                    "Please choose a location within the supported SRTM coverage."
+                ),
+            ) from exc
+
+        raise

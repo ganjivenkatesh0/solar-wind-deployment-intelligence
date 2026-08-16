@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { ClientOnly, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Layers, Plus } from "lucide-react";
@@ -14,7 +14,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MapLayersPanel, MapSearchBar, SelectedSitePanel, SiteInsights } from "@/components/map/map-panels";
-import { mapLayers, mapSummary, selectedSite, mapDataSources, type LayerId } from "@/lib/map-explorer-data";
+import {
+  createMapExplorerData,
+  mapLayers,
+  type LayerId,
+} from "@/lib/map-explorer-data";
+import type { AnalysisRequest, AnalysisResponse } from "@/lib/api/analysis";
 import { LocationIcon, LandIcon, SolarIcon, EnergyIcon, DateIcon } from "@/lib/icons";
 
 const ExplorerMap = lazy(() => import("@/components/map/explorer-map"));
@@ -68,11 +73,45 @@ function SummaryCard({
   );
 }
 
+function readCurrentAnalysis(): {
+  request: AnalysisRequest;
+  result: AnalysisResponse;
+} | null {
+  try {
+    const requestRaw = sessionStorage.getItem("latestAnalysisRequest");
+    const resultRaw = sessionStorage.getItem("latestAnalysisResult");
+
+    if (!requestRaw || !resultRaw) {
+      return null;
+    }
+
+    return {
+      request: JSON.parse(requestRaw) as AnalysisRequest,
+      result: JSON.parse(resultRaw) as AnalysisResponse,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function MapExplorerPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [active, setActive] = useState<Record<LayerId, boolean>>(defaultLayers);
   const [panelOpen, setPanelOpen] = useState(true);
+
+  const analysis = readCurrentAnalysis();
+
+  const mapData = useMemo(() => {
+    if (!analysis) {
+      return null;
+    }
+
+    return createMapExplorerData(
+      analysis.result,
+      analysis.request,
+    );
+  }, [analysis]);
 
   const toggle = (id: LayerId) => setActive((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -116,34 +155,34 @@ function MapExplorerPage() {
           icon={<LocationIcon className="size-4" />}
           iconClass="bg-primary-soft text-primary"
           label="Current Location"
-          value={mapSummary.location}
-          caption={mapSummary.coordinatesLabel}
+          value={mapData?.mapSummary.location ?? "No analysis selected"}
+          caption={mapData?.mapSummary.coordinatesLabel ?? "Run an analysis first"}
         />
         <SummaryCard
           icon={<LandIcon className="size-4" />}
           iconClass="bg-success-soft text-success"
           label="Land Area"
-          value={mapSummary.landAreaLabel}
+          value={mapData?.mapSummary.landAreaLabel ?? "—"}
         />
         <SummaryCard
           icon={<SolarIcon className="size-4" />}
           iconClass="bg-solar-soft text-solar"
           label="Best Technology"
-          value={mapSummary.bestTechnology}
-          caption={mapSummary.suitabilityCaption}
+          value={mapData?.mapSummary.bestTechnology ?? "—"}
+          caption={mapData?.mapSummary.suitabilityCaption ?? "Current suitability score"}
         />
         <SummaryCard
           icon={<EnergyIcon className="size-4" />}
           iconClass="bg-wind-soft text-wind"
           label="Annual Energy Potential"
-          value={mapSummary.annualEnergy}
-          caption={mapSummary.annualEnergyCaption}
+          value={mapData?.mapSummary.annualEnergy ?? "—"}
+          caption={mapData?.mapSummary.annualEnergyCaption ?? "Estimated annual energy generation"}
         />
         <SummaryCard
           icon={<DateIcon className="size-4" />}
           iconClass="bg-info-soft text-info"
           label="Analysis Time"
-          value={mapSummary.analysisTimeLabel}
+          value={mapData?.mapSummary.analysisTimeLabel ?? "—"}
         />
       </div>
 
@@ -153,11 +192,30 @@ function MapExplorerPage() {
             <ClientOnly fallback={<Skeleton className="size-full" />}>
               <Suspense fallback={<Skeleton className="size-full" />}>
                 <ExplorerMap
-                  latitude={selectedSite.latitude}
-                  longitude={selectedSite.longitude}
-                  label={selectedSite.location.split(",")[0] ?? selectedSite.location}
+                  latitude={mapData?.selectedSite.latitude ?? 0}
+                  longitude={mapData?.selectedSite.longitude ?? 0}
+                  label={mapData?.selectedSite.location.split(",")[0] ?? "Selected site"}
                   active={active}
                   onLayersClick={() => setPanelOpen((v) => !v)}
+                  mapData={mapData ?? {
+                    selectedSite: {
+                      status: "No Analysis",
+                      location: "No analysis selected",
+                      coordinatesLabel: "—",
+                      latitude: 0,
+                      longitude: 0,
+                      score: 0,
+                      outOf: 100,
+                      rating: "Unavailable",
+                      metrics: [],
+                    },
+                    mapSites: [],
+                    heatPoints: [],
+                    windPoints: [],
+                    waterBodies: [],
+                    protectedAreas: [],
+                    infrastructureLines: [],
+                  }}
                 />
               </Suspense>
             </ClientOnly>
@@ -168,19 +226,43 @@ function MapExplorerPage() {
               value={search}
               onChange={setSearch}
               onUseCurrentLocation={() =>
-                toast.info("Using analysed site location", { description: mapSummary.coordinatesLabel })
+                toast.info("Using analysed site location", { description: mapData?.mapSummary.coordinatesLabel ?? "Run an analysis first" })
               }
             />
             {panelOpen ? <MapLayersPanel active={active} onToggle={toggle} /> : null}
           </div>
         </div>
 
-        <SelectedSitePanel onViewFullAnalysis={() => navigate({ to: "/dashboard" })} />
+        <SelectedSitePanel
+          selectedSite={
+            mapData?.selectedSite ?? {
+              status: "Unavailable",
+              location: "No analysis selected",
+              coordinatesLabel: "Run an analysis first",
+              latitude: 0,
+              longitude: 0,
+              score: 0,
+              outOf: 100,
+              rating: "Low",
+              metrics: [],
+            }
+          }
+          onViewFullAnalysis={() => navigate({ to: "/dashboard" })}
+        />
       </div>
 
       <div className="mt-4">
         <SiteInsights
-          onOpenSources={() => toast.info("Map data sources", { description: mapDataSources })}
+          siteInsights={mapData?.siteInsights ?? []}
+          mapDataSources={
+            mapData?.mapDataSources ?? "Analysis data sources unavailable"
+          }
+          onOpenSources={() =>
+            toast.info("Map data sources", {
+              description:
+                mapData?.mapDataSources ?? "Analysis data sources",
+            })
+          }
         />
       </div>
     </PageContainer>

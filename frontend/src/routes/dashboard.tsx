@@ -29,7 +29,6 @@ import { SiteLocationCard } from "@/components/dashboard/site-location-card";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
 import {
   createDashboardData,
-  dashboardData,
   type LatestAnalysisRequest,
 } from "@/lib/dashboard-data";
 import type { AnalysisResponse } from "@/lib/api/analysis";
@@ -191,6 +190,7 @@ function DashboardPage() {
             </div>
           ) : tab === "resources" ? (
             <ResourcesTab
+              data={data.resourcesDetails}
               onViewAllSources={notReady("Data source")}
               onViewTerrain={notReady("Terrain")}
               onViewInfrastructure={notReady("Infrastructure")}

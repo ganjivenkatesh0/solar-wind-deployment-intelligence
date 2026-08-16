@@ -7,6 +7,8 @@
  */
 
 import type { AnalysisResponse } from "@/lib/api/analysis";
+import { buildResourcesData } from "@/lib/dashboard-section-data";
+import { resourcesData, type ResourcesData } from "@/lib/resources-data";
 
 export type MonthlyPoint = { month: string; value: number };
 
@@ -57,6 +59,8 @@ export type DashboardData = {
     wind: { value: string; unit: string; rating: string; monthly: MonthlyPoint[] };
     environment: { value: string; unit: string; label: string; icon: "temperature" | "humidity" | "sun" | "pressure" }[];
   };
+  /** Detailed API-backed Resources tab data. */
+  resourcesDetails: ResourcesData;
   financial: {
     metrics: { value: string; label: string; tone: "success" | "info" | "warning" | "solar" }[];
     cashFlow: { year: string; value: number }[];
@@ -368,6 +372,8 @@ export function createDashboardData(
       ],
     },
 
+    resourcesDetails: buildResourcesData(result),
+
     financial: {
       metrics: [
         {
@@ -517,6 +523,8 @@ export const dashboardData: DashboardData = {
       { value: "1021", unit: "hPa", label: "Air Pressure", icon: "pressure" },
     ],
   },
+  resourcesDetails: resourcesData,
+
   financial: {
     metrics: [
       { value: "$550.00K", label: "Total Investment", tone: "success" },

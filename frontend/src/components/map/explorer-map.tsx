@@ -4,15 +4,11 @@ import L from "leaflet";
 import { Circle, CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
 
 import {
-  heatPoints,
-  infrastructureLines,
-  mapSites,
-  protectedAreas,
-  selectedSite,
   suitabilityColor,
-  waterBodies,
-  windPoints,
+  type HeatPoint,
   type LayerId,
+  type SelectedSiteData,
+  type SitePoint,
 } from "@/lib/map-explorer-data";
 
 const selectedIcon = L.divIcon({
@@ -45,11 +41,19 @@ const substationIcon = L.divIcon({
 });
 
 /** Imperative zoom / fit controls rendered as a leaflet-styled overlay. */
-function MapControls({ onLayersClick }: { onLayersClick: () => void }) {
+function MapControls({
+  latitude,
+  longitude,
+  onLayersClick,
+}: {
+  latitude: number;
+  longitude: number;
+  onLayersClick: () => void;
+}) {
   const map = useMap();
 
   const fit = () => {
-    map.setView([selectedSite.latitude, selectedSite.longitude], 10);
+    map.setView([latitude, longitude], 10);
     map.invalidateSize();
   };
 
@@ -90,13 +94,43 @@ export default function ExplorerMap({
   label,
   active,
   onLayersClick,
+  mapData,
 }: {
   latitude: number;
   longitude: number;
   label: string;
   active: Record<LayerId, boolean>;
   onLayersClick: () => void;
+  mapData: {
+    selectedSite: SelectedSiteData;
+    mapSites: SitePoint[];
+    heatPoints: HeatPoint[];
+    windPoints: SitePoint[];
+    waterBodies: Array<{
+      id: string;
+      lat: number;
+      lng: number;
+      radius: number;
+    }>;
+    protectedAreas: Array<{
+      id: string;
+      lat: number;
+      lng: number;
+      radius: number;
+    }>;
+    infrastructureLines: [number, number][][];
+  };
 }) {
+  const {
+    selectedSite,
+    mapSites,
+    heatPoints,
+    windPoints,
+    waterBodies,
+    protectedAreas,
+    infrastructureLines,
+  } = mapData;
+
   return (
     <MapContainer
       center={[latitude, longitude]}
@@ -211,7 +245,11 @@ export default function ExplorerMap({
       </Marker>
 
       <Recenter lat={latitude} lng={longitude} />
-      <MapControls onLayersClick={onLayersClick} />
+      <MapControls
+        latitude={latitude}
+        longitude={longitude}
+        onLayersClick={onLayersClick}
+      />
     </MapContainer>
   );
 }

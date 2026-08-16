@@ -4,11 +4,10 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import {
   mapLayers,
-  selectedSite,
-  siteInsights,
-  mapDataSources,
   type LayerId,
   type MapLayer,
+  type SelectedSiteData,
+  type SiteInsight,
 } from "@/lib/map-explorer-data";
 import {
   SolarIcon,
@@ -137,7 +136,13 @@ export function MapLayersPanel({
 }
 
 /** Right-hand selected site summary card. */
-export function SelectedSitePanel({ onViewFullAnalysis }: { onViewFullAnalysis: () => void }) {
+export function SelectedSitePanel({
+  selectedSite,
+  onViewFullAnalysis,
+}: {
+  selectedSite: SelectedSiteData;
+  onViewFullAnalysis: () => void;
+}) {
   return (
     <section className="surface-card flex min-w-0 flex-col gap-4 p-4">
       <header className="flex items-center justify-between gap-2">
@@ -183,7 +188,7 @@ export function SelectedSitePanel({ onViewFullAnalysis }: { onViewFullAnalysis: 
   );
 }
 
-const insightIcon = (icon: (typeof siteInsights)[number]["icon"]) => {
+const insightIcon = (icon: SiteInsight["icon"]) => {
   const cls = "size-4";
   switch (icon) {
     case "land":
@@ -207,7 +212,15 @@ const toneClass: Record<string, string> = {
 };
 
 /** Bottom "Site Insights" strip. */
-export function SiteInsights({ onOpenSources }: { onOpenSources: () => void }) {
+export function SiteInsights({
+  siteInsights,
+  mapDataSources,
+  onOpenSources,
+}: {
+  siteInsights: SiteInsight[];
+  mapDataSources: string;
+  onOpenSources: () => void;
+}) {
   return (
     <section className="surface-card p-4">
       <h2 className="text-section-title mb-3">Site Insights</h2>

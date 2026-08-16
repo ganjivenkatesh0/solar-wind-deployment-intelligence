@@ -5,20 +5,95 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ChevronRightIcon, EnergyIcon, LocationIcon, ScoreIcon, SolarIcon } from "@/lib/icons";
-import { selectedSite } from "@/lib/map-explorer-data";
+import {
+  createMapExplorerData,
+  type SelectedSiteData,
+} from "@/lib/map-explorer-data";
+import type { AnalysisRequest, AnalysisResponse } from "@/lib/api/analysis";
 import { cn } from "@/lib/utils";
 
 const PreviewMap = lazy(() => import("@/components/map/preview-map"));
 
-const insightCards = [
-  { label: "Suitability", value: String(selectedSite.score), caption: selectedSite.rating, icon: ScoreIcon, tone: "text-success" },
-  { label: "Best Technology", value: "Solar", caption: "8.0 MW", icon: SolarIcon, tone: "text-solar" },
-  { label: "Annual Energy", value: "204.98", caption: "MWh", icon: EnergyIcon, tone: "text-wind" },
-  { label: "Payback", value: "4.2", caption: "Years", icon: ScoreIcon, tone: "text-info" },
-];
+
+
+function readCurrentAnalysis(): {
+  request: AnalysisRequest;
+  result: AnalysisResponse;
+} | null {
+  try {
+    const requestRaw = sessionStorage.getItem("latestAnalysisRequest");
+    const resultRaw = sessionStorage.getItem("latestAnalysisResult");
+
+    if (!requestRaw || !resultRaw) {
+      return null;
+    }
+
+    return {
+      request: JSON.parse(requestRaw) as AnalysisRequest,
+      result: JSON.parse(resultRaw) as AnalysisResponse,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export function MapPreviewTab() {
   const navigate = useNavigate();
+  const analysis = readCurrentAnalysis();
+
+  const mapData = analysis
+    ? createMapExplorerData(
+        analysis.result,
+        analysis.request,
+      )
+    : null;
+
+  const selectedSite: SelectedSiteData = mapData?.selectedSite ?? {
+    status: "No Analysis",
+    location: "No analysis selected",
+    coordinatesLabel: "Run an analysis first",
+    latitude: 0,
+    longitude: 0,
+    score: 0,
+    outOf: 100,
+    rating: "Unavailable",
+    metrics: [],
+  };
+
+  const insightCards = [
+    {
+      label: "Suitability",
+      value: String(selectedSite.score),
+      caption: selectedSite.rating,
+      icon: ScoreIcon,
+      tone: "text-success",
+    },
+    {
+      label: "Best Technology",
+      value: mapData?.mapSummary.bestTechnology ?? "—",
+      caption: mapData?.mapSummary.suitabilityCaption ?? "—",
+      icon: SolarIcon,
+      tone: "text-solar",
+    },
+    {
+      label: "Annual Energy",
+      value: mapData?.mapSummary.annualEnergy ?? "—",
+      caption: mapData?.mapSummary.annualEnergyCaption ?? "—",
+      icon: EnergyIcon,
+      tone: "text-wind",
+    },
+    {
+      label: "Payback",
+      value:
+        selectedSite.metrics.find(
+          (metric) => metric.label === "Payback Period",
+        )?.value ?? "—",
+      caption: "Estimated payback period",
+      icon: ScoreIcon,
+      tone: "text-info",
+    },
+  ];
+
   const openExplorer = () => navigate({ to: "/map-explorer" });
 
   return (
@@ -43,6 +118,8 @@ export function MapPreviewTab() {
                   latitude={selectedSite.latitude}
                   longitude={selectedSite.longitude}
                   label={selectedSite.location.split(",")[0] ?? selectedSite.location}
+                  heatPoints={mapData?.heatPoints ?? []}
+                  mapSites={mapData?.mapSites ?? []}
                 />
               </Suspense>
             </ClientOnly>

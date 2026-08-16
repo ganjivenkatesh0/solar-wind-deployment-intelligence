@@ -3,7 +3,11 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Circle, CircleMarker, MapContainer, Marker, TileLayer, Tooltip } from "react-leaflet";
 
-import { heatPoints, mapSites, suitabilityColor } from "@/lib/map-explorer-data";
+import {
+  suitabilityColor,
+  type HeatPoint,
+  type SitePoint,
+} from "@/lib/map-explorer-data";
 
 /**
  * Lightweight, read-only map preview for the Dashboard "Map" tab.
@@ -20,10 +24,14 @@ export default function PreviewMap({
   latitude,
   longitude,
   label,
+  heatPoints,
+  mapSites,
 }: {
   latitude: number;
   longitude: number;
   label: string;
+  heatPoints: HeatPoint[];
+  mapSites: SitePoint[];
 }) {
   return (
     <MapContainer

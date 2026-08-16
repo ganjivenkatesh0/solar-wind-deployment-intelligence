@@ -217,6 +217,7 @@ function DashboardPage() {
             />
           ) : tab === "ai" ? (
             <AiInsightsTab
+              data={sectionData.aiInsightsDetails}
               onExport={notReady("AI insights report export")}
               onDownload={() =>
                 toast.success("Report export will be available once the analysis API is connected.")

@@ -25,10 +25,13 @@ from app.schemas.deployment_recommendation import (
 
 from app.services.energy.energy_estimation import (
     estimate_hybrid_energy_yield,
+    estimate_deployment_energy_yield,
 )
 from app.services.financial.financial_analysis import (
     estimate_annual_revenue,
     estimate_total_project_cost,
+    estimate_annual_opex,
+    estimate_net_annual_cash_flow,
     estimate_payback_period,
     calculate_roi,
 )
@@ -39,9 +42,16 @@ DEFAULT_SYSTEM_EFFICIENCY = 0.9
 DEFAULT_ELECTRICITY_TARIFF_INR_PER_KWH = 7.5
 DEFAULT_COST_PER_MW_INR = 10_000_000
 DEFAULT_ADDITIONAL_INSTALLATION_PERCENTAGE = 10.0
+DEFAULT_ANNUAL_OPEX_PERCENTAGE_OF_CAPEX = 2.0
+
+from app.services.scoring.normalization import (
+    normalize_solar,
+    normalize_wind,
+)
 
 from app.services.scoring.category_scoring import (
     renewable_resource_score,
+    project_resource_score,
     terrain_score,
     infrastructure_score,
     environmental_score,
@@ -130,17 +140,6 @@ class AnalysisPipelineService:
         road_distance = infrastructure_data["road_distance_km"]
         grid_distance = infrastructure_data["grid_distance_km"]
 
-        if road_distance is None:
-            raise RuntimeError(
-                "OpenStreetMap did not return a nearby road within the search radius."
-            )
-
-        if grid_distance is None:
-            raise RuntimeError(
-                "OpenStreetMap did not return nearby grid infrastructure "
-                "within the search radius."
-            )
-
         # Step 1.2: Technical Feasibility Evaluation
         technical_feasibility = self.feasibility_engine.evaluate(
             slope=slope,
@@ -153,10 +152,30 @@ class AnalysisPipelineService:
             wind_speed
         )
 
-        # Step 3: Renewable Resource Score
-        renewable = renewable_resource_score(
-            solar_features["solar_irradiance"],
-            wind_speed,
+        # Step 3: Renewable Resource Scores
+        #
+        # Keep the individual solar and wind resource scores separate.
+        # The requested project type determines which resource score
+        # contributes to the overall site suitability score.
+        # Calculate the individual resource scores directly.
+        # Do not inject placeholder values into the combined
+        # renewable_resource_score() function.
+        solar_resource_score = round(
+            normalize_solar(
+                solar_features["solar_irradiance"]
+            ),
+            2,
+        )
+
+        wind_resource_score = round(
+            normalize_wind(wind_speed),
+            2,
+        )
+
+        renewable = project_resource_score(
+            solar_irradiance=solar_features["solar_irradiance"],
+            wind_speed=wind_speed,
+            project_type=request.project_type,
         )
 
         # Step 4: Terrain Score
@@ -195,6 +214,7 @@ class AnalysisPipelineService:
             land_area_hectares=request.land_area_hectares,
             overall_site_score=provisional_site_score,
             available_budget=request.available_budget,
+            installation_type=request.installation_type,
         )
 
         wind_capacity_factor = wind_assessment["capacity_factor"] / 100.0
@@ -218,14 +238,26 @@ class AnalysisPipelineService:
             additional_installation_percentage=DEFAULT_ADDITIONAL_INSTALLATION_PERCENTAGE,
         )
 
+        annual_opex = estimate_annual_opex(
+            total_project_cost_inr=estimated_project_cost,
+            annual_opex_percentage_of_capex=DEFAULT_ANNUAL_OPEX_PERCENTAGE_OF_CAPEX,
+        )
+
+        net_annual_cash_flow = estimate_net_annual_cash_flow(
+            annual_revenue_inr=annual_revenue,
+            annual_opex_inr=annual_opex,
+        )
+
         payback_period = estimate_payback_period(
             total_project_cost_inr=estimated_project_cost,
             annual_revenue_inr=annual_revenue,
+            annual_opex_inr=annual_opex,
         )
 
         roi = calculate_roi(
             total_project_cost_inr=estimated_project_cost,
             annual_revenue_inr=annual_revenue,
+            annual_opex_inr=annual_opex,
         )
 
         economic = economic_score(
@@ -268,17 +300,18 @@ class AnalysisPipelineService:
         overall_site_score = score_result["overall_score"]
 
         # Step 11: Deployment Recommendation
-        solar_score = renewable
-        wind_score = renewable
-
+        #
+        # Recommendation receives the actual individual solar and wind
+        # resource scores instead of duplicating the combined score.
         recommendation_request = DeploymentRecommendationRequest(
             overall_site_score=overall_site_score,
-            solar_score=solar_score,
-            wind_score=wind_score,
+            solar_score=solar_resource_score,
+            wind_score=wind_resource_score,
             terrain_score=terrain,
             infrastructure_score=infrastructure,
             estimated_solar_energy=energy_estimation["solar_energy"],
             estimated_wind_energy=energy_estimation["wind_energy"],
+            project_type=request.project_type,
         )
 
         recommendation = (
@@ -292,38 +325,99 @@ class AnalysisPipelineService:
             land_area_hectares=request.land_area_hectares,
             overall_site_score=overall_site_score,
             available_budget=request.available_budget,
+            installation_type=request.installation_type,
         )
 
-        # Step 13: Final Economic and Site Score
-        economic = economic_score(
-            payback_period=payback_period,
-            roi=roi,
+        # Step 13: Final Energy and Financial Analysis
+        #
+        # The final recommended capacity must be the source of truth for
+        # energy and financial metrics returned to the frontend. This keeps
+        # capacity, generation, revenue and ROI internally consistent.
+
+        energy_deployment_type = recommendation.deployment_type
+
+        # Energy & Financial describes the site's potential.
+        # A "Not Recommended" site still gets a potential hybrid
+        # energy estimate; the final recommendation remains unchanged.
+        if energy_deployment_type == "Not Recommended":
+            energy_deployment_type = "Hybrid"
+
+        energy_estimation = estimate_deployment_energy_yield(
+            deployment_type=energy_deployment_type,
+            installed_capacity=recommended_capacity,
+            solar_capacity_factor=DEFAULT_SOLAR_CAPACITY_FACTOR,
+            wind_capacity_factor=wind_capacity_factor,
+            system_efficiency=DEFAULT_SYSTEM_EFFICIENCY,
         )
 
-        score_result = calculate_overall_score(
-            renewable=renewable,
-            terrain=terrain,
-            infrastructure=infrastructure,
-            environmental=environmental,
-            economic=economic,
-        )
+        if recommended_capacity <= 0:
+            annual_revenue = 0.0
+            estimated_project_cost = 0.0
+            annual_opex = 0.0
+            net_annual_cash_flow = 0.0
+            payback_period = 0.0
+            roi = 0.0
+            economic = 0.0
+        else:
+            annual_revenue = estimate_annual_revenue(
+                annual_energy_yield_mwh=energy_estimation["total_energy"],
+                electricity_tariff_inr_per_kwh=DEFAULT_ELECTRICITY_TARIFF_INR_PER_KWH,
+            )
 
-        renewable = score_result["renewable_score"]
-        terrain = score_result["terrain_score"]
-        infrastructure = score_result["infrastructure_score"]
-        environmental = score_result["environmental_score"]
-        economic = score_result["economic_score"]
-        overall_site_score = score_result["overall_score"]
+            estimated_project_cost = estimate_total_project_cost(
+                installed_capacity_mw=recommended_capacity,
+                cost_per_mw_inr=DEFAULT_COST_PER_MW_INR,
+                additional_installation_percentage=DEFAULT_ADDITIONAL_INSTALLATION_PERCENTAGE,
+            )
 
-        # Refresh the recommendation using the final site score.
+            annual_opex = estimate_annual_opex(
+                total_project_cost_inr=estimated_project_cost,
+                annual_opex_percentage_of_capex=DEFAULT_ANNUAL_OPEX_PERCENTAGE_OF_CAPEX,
+            )
+
+            net_annual_cash_flow = estimate_net_annual_cash_flow(
+                annual_revenue_inr=annual_revenue,
+                annual_opex_inr=annual_opex,
+            )
+
+            payback_period = estimate_payback_period(
+                total_project_cost_inr=estimated_project_cost,
+                annual_revenue_inr=annual_revenue,
+                annual_opex_inr=annual_opex,
+            )
+
+            roi = calculate_roi(
+                total_project_cost_inr=estimated_project_cost,
+                annual_revenue_inr=annual_revenue,
+                annual_opex_inr=annual_opex,
+            )
+
+            economic = economic_score(
+                payback_period=payback_period,
+                roi=roi,
+            )
+
+        financial_analysis = {
+            "annual_revenue": float(annual_revenue),
+            "estimated_project_cost": float(estimated_project_cost),
+            "annual_opex": float(annual_opex),
+            "net_annual_cash_flow": float(net_annual_cash_flow),
+            "payback_period": float(payback_period),
+            "roi": float(roi),
+        }
+
+        # Keep Step 10 as the source of truth for site suitability.
+        # Final energy/financial values describe the recommended deployment
+        # and must not recalculate the original suitability score.
         recommendation_request = DeploymentRecommendationRequest(
             overall_site_score=overall_site_score,
-            solar_score=renewable,
-            wind_score=renewable,
+            solar_score=solar_resource_score,
+            wind_score=wind_resource_score,
             terrain_score=terrain,
             infrastructure_score=infrastructure,
             estimated_solar_energy=energy_estimation["solar_energy"],
             estimated_wind_energy=energy_estimation["wind_energy"],
+            project_type=request.project_type,
         )
 
         recommendation = (
@@ -331,9 +425,6 @@ class AnalysisPipelineService:
                 recommendation_request
             )
         )
-
-        # Keep the energy result aligned with the final recommendation.
-        energy_estimation["deployment_type"] = recommendation.deployment_type
 
         # Step 14: Analyze future expansion potential
         expansion_status = self.expansion_analysis.analyze_expansion(
@@ -345,14 +436,16 @@ class AnalysisPipelineService:
         # Step 15: Create optimization request
         optimization_request = OptimizationRequest(
             overall_site_score=overall_site_score,
-            solar_score=renewable,
-            wind_score=renewable,
+            solar_score=solar_resource_score,
+            wind_score=wind_resource_score,
             terrain_score=terrain,
             infrastructure_score=infrastructure,
             estimated_solar_energy=energy_estimation["solar_energy"],
             estimated_wind_energy=energy_estimation["wind_energy"],
             land_area_hectares=request.land_area_hectares,
             available_budget=request.available_budget,
+            project_type=request.project_type,
+            installation_type=request.installation_type,
         )
 
         # Step 16: Generate deployment plan
@@ -381,6 +474,7 @@ class AnalysisPipelineService:
             energy_yield=energy_estimation,
             financial_metrics=financial_analysis,
             recommendation_reason=recommendation.reason,
+            recommendation=recommendation,
 
             deployment_plan={
                 "recommendation": recommendation.model_dump(),

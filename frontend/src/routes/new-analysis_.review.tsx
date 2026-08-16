@@ -271,6 +271,11 @@ function ReviewPage() {
         longitude: Number(site.longitude),
         land_area_hectares: Number(site.landArea.replace(/,/g, "")),
         available_budget: Number(site.budget.replace(/,/g, "")),
+        project_type: params.projectType as "solar" | "wind" | "hybrid",
+        installation_type: params.installationType as
+          | "ground-mounted"
+          | "rooftop"
+          | "other",
       });
 
       sessionStorage.setItem("latestAnalysisResult", JSON.stringify(result));
@@ -282,6 +287,8 @@ function ReviewPage() {
           longitude: Number(site.longitude),
           land_area_hectares: Number(site.landArea.replace(/,/g, "")),
           available_budget: Number(site.budget.replace(/,/g, "")),
+          project_type: params.projectType,
+          installation_type: params.installationType,
           location_name: site.locationName,
         }),
       );

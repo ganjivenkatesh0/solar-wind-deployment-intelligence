@@ -25,10 +25,9 @@ import {
   CostDonut,
   GenerationBarChart,
 } from "./energy-financial-charts";
-import {
-  energyFinancialData,
-  type EfBadgeTone,
-  type EnergyFinancialData,
+import type {
+  EfBadgeTone,
+  EnergyFinancialData,
 } from "@/lib/energy-financial-data";
 import { cn } from "@/lib/utils";
 
@@ -132,7 +131,7 @@ function KpiRing({ color, icon }: { color: string; icon: React.ReactNode }) {
 }
 
 export function EnergyFinancialTab({
-  data = energyFinancialData,
+  data,
   onExport,
   onDownload,
 }: {
@@ -190,7 +189,16 @@ export function EnergyFinancialTab({
               {kpi.id === "energy" ? (
                 <>
                   <div className="bg-muted mt-1 h-1.5 overflow-hidden rounded-full">
-                    <div className="bg-solar h-full" style={{ width: "42.3%" }} />
+                    <div
+                      className="bg-solar h-full"
+                      style={{
+                        width: `${
+                          Number.parseFloat(
+                            gen.solar.caption.match(/\(([^%]+)%\)/)?.[1] ?? "0",
+                          )
+                        }%`,
+                      }}
+                    />
                   </div>
                   <div className="border-solar/25 mt-1 flex items-center justify-between gap-2 border-t pt-2">
                     <span className="flex min-w-0 items-center gap-1.5">
@@ -388,7 +396,7 @@ export function EnergyFinancialTab({
                   <th className="text-helper py-2 px-2 text-right font-semibold">LCOE ($/kWh)</th>
                   <th className="text-helper py-2 px-2 text-right font-semibold">IRR (%)</th>
                   <th className="text-helper py-2 pl-2 text-right font-semibold">
-                    Payback (Years)
+                    Payback Period
                   </th>
                 </tr>
               </thead>

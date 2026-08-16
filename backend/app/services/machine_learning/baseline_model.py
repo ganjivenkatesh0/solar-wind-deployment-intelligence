@@ -30,12 +30,18 @@ class RenewableBaselineModel:
     ]:
         """Prepare data, split it, and train the baseline model."""
 
-        if not Path(file_path).exists():
+        dataset_path = Path(file_path)
+
+        if not dataset_path.exists():
+            project_root = Path(__file__).resolve().parents[4]
+            dataset_path = project_root / file_path
+
+        if not dataset_path.exists():
             raise FileNotFoundError(
                 f"Training dataset not found: {file_path}"
             )
 
-        X, y = RenewableTrainingDataset.prepare(file_path)
+        X, y = RenewableTrainingDataset.prepare(str(dataset_path))
 
         X_train, X_test, y_train, y_test = train_test_split(
             X,

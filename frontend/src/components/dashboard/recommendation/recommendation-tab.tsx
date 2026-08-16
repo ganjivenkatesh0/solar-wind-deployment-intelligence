@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FeasibilityPanel } from "../feasibility/feasibility-primitives";
 import { PriorityIcon, TrendIcon } from "@/lib/icons";
-import { recommendationData, type RecommendationData } from "@/lib/recommendation-data";
+import type { RecommendationData } from "@/lib/recommendation-data";
 import { cn } from "@/lib/utils";
 import solarImage from "@/assets/rec-solar.jpg";
 import windImage from "@/assets/rec-wind.jpg";
@@ -127,7 +127,7 @@ function MiniScoreRing({
 }
 
 export function RecommendationTab({
-  data = recommendationData,
+  data,
   onExport,
   onDownload,
   onCompareOptions,

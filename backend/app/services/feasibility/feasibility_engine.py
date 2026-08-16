@@ -17,7 +17,7 @@ class FeasibilityEngine:
         self,
         *,
         slope: float,
-        grid_distance: float,
+        grid_distance: float | None,
         road_distance: float,
         land_use_restricted: bool = False,
     ) -> dict[str, Any]:

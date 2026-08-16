@@ -19,17 +19,64 @@ def renewable_resource_score(solar_irradiance: float, wind_speed: float) -> floa
     return round((solar_score + wind_score) / 2, 2)
 
 
+def project_resource_score(
+    solar_irradiance: float,
+    wind_speed: float,
+    project_type: str,
+) -> float:
+    """
+    Calculate the renewable resource score according to the
+    requested project type.
+
+    Solar:
+        Uses solar resource only.
+
+    Wind:
+        Uses wind resource only.
+
+    Hybrid:
+        Uses the combined solar + wind resource score.
+    """
+
+    normalized_type = project_type.strip().lower()
+
+    solar_score = normalize_solar(solar_irradiance)
+    wind_score = normalize_wind(wind_speed)
+
+    if normalized_type == "solar":
+        return round(solar_score, 2)
+
+    if normalized_type == "wind":
+        return round(wind_score, 2)
+
+    if normalized_type == "hybrid":
+        return round((solar_score + wind_score) / 2, 2)
+
+    raise ValueError(
+        "project_type must be one of: solar, wind, hybrid"
+    )
+
+
 def terrain_score(slope: float) -> float:
     """Calculate the Terrain Score from slope data."""
     return normalize_slope(slope)
 
 
-def infrastructure_score(grid_distance: float, road_distance: float) -> float:
-    """Calculate the Infrastructure Score from grid and road proximity."""
-    grid_score = normalize_grid_distance(grid_distance)
-    road_score = normalize_road_distance(road_distance)
+def infrastructure_score(
+    grid_distance: float | None,
+    road_distance: float,
+) -> float:
+    """Calculate infrastructure score from available grid and road data."""
 
-    return round((grid_score + road_score) / 2, 2)
+    scores = []
+
+    if grid_distance is not None:
+        scores.append(normalize_grid_distance(grid_distance))
+
+    if road_distance is not None:
+        scores.append(normalize_road_distance(road_distance))
+
+    return round(sum(scores) / len(scores), 2)
 
 
 def environmental_score(

@@ -12,7 +12,20 @@ from app.services.machine_learning.model_persistence import ModelPersistence
 class RenewableModelInference:
     """Load the trained renewable-energy model once and perform predictions."""
 
-    MODEL_PATH = Path("models/best_solar_pvout_model.joblib")
+    _FILE_PATH = Path(__file__).resolve()
+    _PROJECT_ROOT = next(
+        (
+            parent
+            for parent in _FILE_PATH.parents
+            if (parent / "models" / "best_solar_pvout_model.joblib").exists()
+        ),
+        _FILE_PATH.parents[3],
+    )
+    MODEL_PATH = (
+        _PROJECT_ROOT
+        / "models"
+        / "best_solar_pvout_model.joblib"
+    )
 
     FEATURE_COLUMNS = [
         "Year",

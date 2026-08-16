@@ -24,6 +24,15 @@ class RenewableTrainingDataset:
 
         path = Path(file_path)
 
+        # Resolve project-relative dataset paths independently of the
+        # current working directory.
+        if not path.is_absolute() and not path.exists():
+            project_root = Path(__file__).resolve().parents[4]
+            candidate = project_root / path
+
+            if candidate.exists():
+                path = candidate
+
         if not path.exists():
             raise FileNotFoundError(
                 f"Training dataset not found: {file_path}"

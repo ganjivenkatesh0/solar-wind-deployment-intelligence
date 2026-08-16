@@ -101,9 +101,11 @@ def test_estimate_hybrid_energy_yield_returns_expected_breakdown():
     )
 
     assert result == {
-        "solar_energy": 192720.0,
-        "wind_energy": 306600.0,
-        "total_energy": 499320.0,
+        "solar_capacity_mw": 50.0,
+        "wind_capacity_mw": 50.0,
+        "solar_energy": 96360.0,
+        "wind_energy": 153300.0,
+        "total_energy": 249660.0,
     }
 
 
@@ -261,16 +263,18 @@ def test_estimate_hybrid_energy_yield_consistent_with_component_sums():
         system_efficiency=system_efficiency,
     )
     solar_energy = estimate_solar_energy_yield(
-        installed_capacity=installed_capacity,
+        installed_capacity=hybrid["solar_capacity_mw"],
         solar_capacity_factor=solar_capacity_factor,
         system_efficiency=system_efficiency,
     )
     wind_energy = estimate_wind_energy_yield(
-        installed_capacity=installed_capacity,
+        installed_capacity=hybrid["wind_capacity_mw"],
         wind_capacity_factor=wind_capacity_factor,
         system_efficiency=system_efficiency,
     )
 
+    assert hybrid["solar_energy"] == pytest.approx(solar_energy)
+    assert hybrid["wind_energy"] == pytest.approx(wind_energy)
     assert hybrid["total_energy"] == pytest.approx(solar_energy + wind_energy)
     assert hybrid["solar_energy"] == pytest.approx(solar_energy)
     assert hybrid["wind_energy"] == pytest.approx(wind_energy)
@@ -355,7 +359,7 @@ def test_estimate_hybrid_energy_yield_respects_system_efficiency():
     )
 
     assert reduced_efficiency["total_energy"] < full_efficiency["total_energy"]
-    assert reduced_efficiency["total_energy"] == 374490.0
+    assert reduced_efficiency["total_energy"] == 187245.0
 
 
 def test_estimate_energy_yield_allows_zero_efficiency():

@@ -42,6 +42,9 @@ class DeploymentRecommendationRequest(BaseModel):
 
     wind_score: float
 
+    # Optional so existing service callers remain compatible.
+    project_type: str | None = None
+
     terrain_score: float
 
     infrastructure_score: float

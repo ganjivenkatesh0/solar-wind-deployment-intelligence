@@ -757,7 +757,7 @@ export function buildEnergyFinancialData(
           tone: "solar",
         },
         {
-          label: "Payback",
+          label: "Payback Period",
           value: `${payback.toFixed(2)} Years`,
           tone: "success",
         },

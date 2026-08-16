@@ -83,7 +83,7 @@ export function MapPreviewTab() {
       tone: "text-wind",
     },
     {
-      label: "Payback",
+      label: "Payback Period",
       value:
         selectedSite.metrics.find(
           (metric) => metric.label === "Payback Period",

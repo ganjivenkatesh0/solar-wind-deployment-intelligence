@@ -8,8 +8,27 @@ import pandas as pd
 class MLContextualFeatureService:
     """Resolve country context from the ML training dataset."""
 
-    DATASET_PATH = Path(
-        "datasets/raw/global_wind_atlas/global_data.xlsx"
+    _FILE_PATH = Path(__file__).resolve()
+    _DATASET_RELATIVE_PATH = Path(
+        "datasets",
+        "raw",
+        "global_wind_atlas",
+        "global_data.xlsx",
+    )
+
+    _DATASET_CANDIDATES = [
+        _FILE_PATH.parents[4] / _DATASET_RELATIVE_PATH,
+        _FILE_PATH.parents[3] / _DATASET_RELATIVE_PATH,
+        Path("/app") / _DATASET_RELATIVE_PATH,
+    ]
+
+    DATASET_PATH = next(
+        (
+            candidate
+            for candidate in _DATASET_CANDIDATES
+            if candidate.exists()
+        ),
+        _DATASET_CANDIDATES[0],
     )
 
     FEATURE_COLUMNS = [

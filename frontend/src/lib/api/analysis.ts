@@ -5,6 +5,8 @@ export type AnalysisRequest = {
   longitude: number;
   land_area_hectares: number;
   available_budget: number;
+  project_type?: "solar" | "wind" | "hybrid";
+  installation_type?: "ground-mounted" | "rooftop" | "other";
 };
 
 export type ConstraintResult = {

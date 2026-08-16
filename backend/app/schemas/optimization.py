@@ -4,6 +4,9 @@ from pydantic import BaseModel, Field
 
 
 class OptimizationRequest(BaseModel):
+    project_type: str | None = None
+    installation_type: str | None = None
+
     overall_site_score: float
     solar_score: float
     wind_score: float

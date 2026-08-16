@@ -10,7 +10,7 @@ from app.services.scoring.normalization import (
 
 def calculate_soft_constraint_score(
     *,
-    grid_distance: float,
+    grid_distance: float | None,
     road_distance: float,
 ) -> dict[str, Any]:
     """
@@ -20,10 +20,26 @@ def calculate_soft_constraint_score(
     independently reject a site.
     """
 
-    grid_score = normalize_grid_distance(grid_distance)
-    road_score = normalize_road_distance(road_distance)
+    grid_score = (
+        normalize_grid_distance(grid_distance)
+        if grid_distance is not None
+        else None
+    )
+    road_score = (
+        None
+        if road_distance is None
+        else normalize_road_distance(road_distance)
+    )
 
-    overall_score = round((grid_score + road_score) / 2, 2)
+    available_scores = [
+        score for score in (grid_score, road_score)
+        if score is not None
+    ]
+
+    overall_score = round(
+        sum(available_scores) / len(available_scores),
+        2,
+    ) if available_scores else 0.0
 
     return {
         "score": overall_score,

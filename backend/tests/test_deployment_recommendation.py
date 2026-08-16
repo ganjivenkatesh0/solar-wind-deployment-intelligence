@@ -74,3 +74,80 @@ def test_not_recommended():
 
     assert result.deployment_type == "Not Recommended"
     assert result.priority == "Not Recommended"
+
+def test_explicit_project_type_is_respected():
+    from app.schemas.deployment_recommendation import (
+        DeploymentRecommendationRequest,
+    )
+    from app.services.deployment_recommendation_service import (
+        DeploymentRecommendationService,
+    )
+
+    solar = DeploymentRecommendationService.generate_recommendation(
+        DeploymentRecommendationRequest(
+            overall_site_score=90,
+            solar_score=70,
+            wind_score=95,
+            terrain_score=85,
+            infrastructure_score=85,
+            estimated_solar_energy=10000,
+            estimated_wind_energy=20000,
+            project_type="solar",
+        )
+    )
+
+    wind = DeploymentRecommendationService.generate_recommendation(
+        DeploymentRecommendationRequest(
+            overall_site_score=90,
+            solar_score=95,
+            wind_score=70,
+            terrain_score=85,
+            infrastructure_score=85,
+            estimated_solar_energy=20000,
+            estimated_wind_energy=10000,
+            project_type="wind",
+        )
+    )
+
+    hybrid = DeploymentRecommendationService.generate_recommendation(
+        DeploymentRecommendationRequest(
+            overall_site_score=90,
+            solar_score=70,
+            wind_score=70,
+            terrain_score=85,
+            infrastructure_score=85,
+            estimated_solar_energy=10000,
+            estimated_wind_energy=10000,
+            project_type="hybrid",
+        )
+    )
+
+    assert solar.deployment_type == "Solar"
+    assert wind.deployment_type == "Wind"
+    assert hybrid.deployment_type == "Hybrid"
+
+
+def test_explicit_project_type_is_respected_even_when_score_is_low():
+    """Explicit user selection must not be replaced by Not Recommended."""
+
+    for project_type, expected in (
+        ("solar", "Solar"),
+        ("wind", "Wind"),
+        ("hybrid", "Hybrid"),
+    ):
+        request = DeploymentRecommendationRequest(
+            overall_site_score=40.0,
+            solar_score=30.0,
+            wind_score=50.0,
+            terrain_score=80.0,
+            infrastructure_score=80.0,
+            estimated_solar_energy=100.0,
+            estimated_wind_energy=100.0,
+            project_type=project_type,
+        )
+
+        result = DeploymentRecommendationService.generate_recommendation(
+            request
+        )
+
+        assert result.deployment_type == expected

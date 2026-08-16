@@ -38,6 +38,7 @@ class DeploymentPlanService:
             infrastructure_score=request.infrastructure_score,
             estimated_solar_energy=request.estimated_solar_energy,
             estimated_wind_energy=request.estimated_wind_energy,
+            project_type=getattr(request, "project_type", None),
         )
 
         recommendation = (
@@ -56,6 +57,11 @@ class DeploymentPlanService:
             land_area_hectares=request.land_area_hectares,
             overall_site_score=request.overall_site_score,
             available_budget=request.available_budget,
+            installation_type=getattr(
+                request,
+                "installation_type",
+                "ground-mounted",
+            ),
         )
 
         # -----------------------------

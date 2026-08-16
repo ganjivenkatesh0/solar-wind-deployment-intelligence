@@ -31,6 +31,7 @@ import {
   createDashboardData,
   type LatestAnalysisRequest,
 } from "@/lib/dashboard-data";
+import { buildDashboardSectionData } from "@/lib/dashboard-section-data";
 import type { AnalysisResponse } from "@/lib/api/analysis";
 
 export const Route = createFileRoute("/dashboard")({
@@ -61,6 +62,7 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [data, setData] = useState<ReturnType<typeof createDashboardData> | null>(null);
+  const [sectionData, setSectionData] = useState<ReturnType<typeof buildDashboardSectionData> | null>(null);
 
   useEffect(() => {
     try {
@@ -83,6 +85,7 @@ function DashboardPage() {
       const request = JSON.parse(storedRequest) as LatestAnalysisRequest;
 
       setData(createDashboardData(result, request));
+      setSectionData(buildDashboardSectionData(result, request));
     } catch (error) {
       setData(null);
       setDataError(
@@ -127,7 +130,7 @@ function DashboardPage() {
     );
   }
 
-  if (!data) {
+  if (!data || !sectionData) {
     return (
       <PageContainer>
         <PageHeader
@@ -197,6 +200,7 @@ function DashboardPage() {
             />
           ) : tab === "feasibility" ? (
             <FeasibilityTab
+              data={sectionData.feasibilityDetails}
               onExport={notReady("Feasibility report export")}
               onDownload={() =>
                 toast.success("Report export will be available once the analysis API is connected.")
@@ -205,6 +209,7 @@ function DashboardPage() {
             />
           ) : tab === "energy" ? (
             <EnergyFinancialTab
+              data={sectionData.energyFinancialDetails}
               onExport={notReady("Financial report export")}
               onDownload={() =>
                 toast.success("Report export will be available once the analysis API is connected.")
@@ -221,6 +226,7 @@ function DashboardPage() {
             />
           ) : tab === "recommendation" ? (
             <RecommendationTab
+              data={sectionData.recommendationDetails}
               onExport={notReady("Recommendation report export")}
               onDownload={() =>
                 toast.success("Report export will be available once the analysis API is connected.")

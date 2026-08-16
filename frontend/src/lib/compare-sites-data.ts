@@ -302,7 +302,7 @@ export const metricTabs: Record<string, { rows: MetricRow[] }> = {
       { label: "Capacity Factor", value: (s) => `${r(16 + s.suitability / 6)} %` },
       { label: "Estimated CAPEX", value: (s) => `$${r(s.capacityMw * 0.78, 2)}M` },
       { label: "LCOE", value: (s) => `$${r(0.088 - s.suitability / 4000, 3)}/kWh` },
-      { label: "Simple Payback", value: (s) => `${r(11.5 - s.scores.economic / 14)} yrs` },
+      { label: "Payback Period", value: (s) => `${r(11.5 - s.scores.economic / 14)} yrs` },
       { label: "25-Year NPV", value: (s) => `$${r(s.capacityMw * 0.34 * (s.suitability / 60), 2)}M` },
       { label: "Project IRR", value: (s) => `${r(7 + s.scores.economic / 9)} %` },
     ],

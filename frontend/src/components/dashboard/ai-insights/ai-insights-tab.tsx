@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FeasibilityPanel } from "../feasibility/feasibility-primitives";
-import { aiInsightsData, type AiInsightsData } from "@/lib/ai-insights-data";
+import type { AiInsightsData } from "@/lib/ai-insights-data";
 import { cn } from "@/lib/utils";
 
 const accuracyIcon = {
@@ -96,7 +96,7 @@ function AccuracyRing({ value }: { value: number }) {
 }
 
 export function AiInsightsTab({
-  data = aiInsightsData,
+  data,
   onExport,
   onDownload,
   onViewSimilar,

@@ -71,54 +71,84 @@ def estimate_total_project_cost(
     return round(total_cost, 2)
 
 
+
+def estimate_annual_opex(
+    total_project_cost_inr: Number,
+    annual_opex_percentage_of_capex: Number = 2.0,
+) -> float:
+    """Estimate annual operating expenditure as a percentage of CAPEX."""
+
+    if total_project_cost_inr < 0:
+        raise ValueError("Total project cost cannot be negative.")
+
+    if annual_opex_percentage_of_capex < 0:
+        raise ValueError("Annual OPEX percentage cannot be negative.")
+
+    annual_opex = (
+        total_project_cost_inr
+        * annual_opex_percentage_of_capex
+        / 100.0
+    )
+
+    return round(annual_opex, 2)
+
+
+def estimate_net_annual_cash_flow(
+    annual_revenue_inr: Number,
+    annual_opex_inr: Number,
+) -> float:
+    """Estimate annual cash flow after operating expenditure."""
+
+    if annual_revenue_inr <= 0:
+        raise ValueError(
+            "Annual revenue must be positive to calculate payback period."
+        )
+
+    if annual_opex_inr < 0:
+        raise ValueError("Annual OPEX cannot be negative.")
+
+    return round(
+        annual_revenue_inr - annual_opex_inr,
+        2,
+    )
+
 def estimate_payback_period(
     total_project_cost_inr: Number,
     annual_revenue_inr: Number,
+    annual_opex_inr: Number = 0.0,
 ) -> float:
-    """Estimate project payback period in years.
-
-    Parameters
-    ----------
-    total_project_cost_inr : float
-        Total project cost in INR.
-    annual_revenue_inr : float
-        Annual revenue in INR per year.
-
-    Returns
-    -------
-    float
-        Estimated payback period in years.
-    """
+    """Estimate project payback period using net annual cash flow."""
 
     if total_project_cost_inr < 0:
         raise ValueError("Total project cost cannot be negative.")
 
     if annual_revenue_inr <= 0:
-        raise ValueError("Annual revenue must be positive to calculate payback period.")
+        raise ValueError(
+            "Annual revenue must be positive to calculate payback period."
+        )
 
-    payback_period = total_project_cost_inr / annual_revenue_inr
+    if annual_opex_inr < 0:
+        raise ValueError("Annual OPEX cannot be negative.")
+
+    net_annual_cash_flow = annual_revenue_inr - annual_opex_inr
+
+    if net_annual_cash_flow <= 0:
+        raise ValueError(
+            "Net annual cash flow must be positive to calculate payback period."
+        )
+
+    payback_period = (
+        total_project_cost_inr / net_annual_cash_flow
+    )
+
     return round(payback_period, 2)
-
 
 def calculate_roi(
     total_project_cost_inr: Number,
     annual_revenue_inr: Number,
+    annual_opex_inr: Number = 0.0,
 ) -> float:
-    """Calculate simple first-year return on investment.
-
-    Parameters
-    ----------
-    total_project_cost_inr : float
-        Total project cost in INR.
-
-    annual_revenue_inr : float
-        Annual revenue in INR per year.
-
-    Returns
-    -------
-    float
-        Return on investment as a percentage.
-    """
+    """Calculate first-year ROI using net annual cash flow."""
 
     if total_project_cost_inr <= 0:
         raise ValueError("Total project cost must be positive to calculate ROI.")
@@ -126,13 +156,17 @@ def calculate_roi(
     if annual_revenue_inr < 0:
         raise ValueError("Annual revenue cannot be negative.")
 
+    if annual_opex_inr < 0:
+        raise ValueError("Annual OPEX cannot be negative.")
+
+    net_annual_cash_flow = annual_revenue_inr - annual_opex_inr
+
     roi = (
-        (annual_revenue_inr - total_project_cost_inr)
+        (net_annual_cash_flow - total_project_cost_inr)
         / total_project_cost_inr
     ) * 100
 
     return round(roi, 2)
-
 
 class FinancialAnalysisService:
     """Placeholder service for financial calculations."""
@@ -162,22 +196,46 @@ class FinancialAnalysisService:
             additional_installation_percentage=additional_installation_percentage,
         )
 
+    def estimate_annual_opex(
+        self,
+        total_project_cost_inr: Number,
+        annual_opex_percentage_of_capex: Number = 2.0,
+    ) -> float:
+        return estimate_annual_opex(
+            total_project_cost_inr=total_project_cost_inr,
+            annual_opex_percentage_of_capex=annual_opex_percentage_of_capex,
+        )
+
+    def estimate_net_annual_cash_flow(
+        self,
+        annual_revenue_inr: Number,
+        annual_opex_inr: Number,
+    ) -> float:
+        return estimate_net_annual_cash_flow(
+            annual_revenue_inr=annual_revenue_inr,
+            annual_opex_inr=annual_opex_inr,
+        )
+
     def estimate_payback_period(
         self,
         total_project_cost_inr: Number,
         annual_revenue_inr: Number,
+        annual_opex_inr: Number = 0.0,
     ) -> float:
         return estimate_payback_period(
             total_project_cost_inr=total_project_cost_inr,
             annual_revenue_inr=annual_revenue_inr,
+            annual_opex_inr=annual_opex_inr,
         )
 
     def calculate_roi(
         self,
         total_project_cost_inr: Number,
         annual_revenue_inr: Number,
+        annual_opex_inr: Number = 0.0,
     ) -> float:
         return calculate_roi(
             total_project_cost_inr=total_project_cost_inr,
             annual_revenue_inr=annual_revenue_inr,
+            annual_opex_inr=annual_opex_inr,
         )

@@ -187,7 +187,11 @@ def test_best_model_persistence():
         ModelPersistence,
     )
 
-    model_path = Path("models/best_solar_pvout_model.joblib")
+    model_path = (
+        Path(__file__).resolve().parents[2]
+        / "models"
+        / "best_solar_pvout_model.joblib"
+    )
 
     assert model_path.exists()
 
@@ -216,7 +220,11 @@ def test_compare_candidate_models_returns_metrics_and_serializes_best_model():
 
     assert result["best_model"]["name"] in result["models"]
 
-    model_path = Path("models/best_solar_pvout_model.joblib")
+    model_path = (
+        Path(__file__).resolve().parents[2]
+        / "models"
+        / "best_solar_pvout_model.joblib"
+    )
     assert model_path.exists()
 
     loaded_model = ModelPersistence.load(str(model_path))

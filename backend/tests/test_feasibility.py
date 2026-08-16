@@ -103,3 +103,20 @@ def test_failed_constraints_report_multiple_failures():
     assert "terrain" in failed
     assert "land_use" in failed
     assert result["constraint_summary"].startswith("Mandatory technical constraints failed")
+
+def test_missing_grid_distance_is_supported():
+    """Missing grid data must not make technical feasibility fail."""
+
+    engine = FeasibilityEngine()
+
+    result = engine.evaluate(
+        slope=2.0,
+        grid_distance=None,
+        road_distance=0.5,
+    )
+
+    assert result["is_feasible"] is True
+    assert result["soft_constraints"]["constraints"]["grid_proximity"]["score"] is None
+    assert result["soft_constraints"]["constraints"]["grid_proximity"]["value"] is None
+    assert result["soft_constraints"]["constraints"]["road_accessibility"]["score"] is not None
+

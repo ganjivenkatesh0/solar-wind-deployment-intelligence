@@ -1,6 +1,10 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+from app.schemas.deployment_recommendation import (
+    DeploymentRecommendationResponse,
+)
 
 
 class HardConstraintResult(BaseModel):
@@ -16,8 +20,8 @@ class HardConstraintsResponse(BaseModel):
 
 
 class SoftConstraintResult(BaseModel):
-    score: float
-    value: float
+    score: float | None
+    value: float | None
     unit: str
 
 
@@ -42,6 +46,21 @@ class AnalysisRequest(BaseModel):
     land_area_hectares: float = Field(..., gt=0)
     available_budget: float = Field(..., gt=0)
 
+    # Optional for backward compatibility with existing API clients/tests.
+    # New Analysis UI always sends these values.
+    project_type: Literal["solar", "wind", "hybrid"] = Field(
+        default="hybrid",
+        description="Requested project type: solar, wind, or hybrid",
+    )
+    installation_type: Literal[
+        "ground-mounted",
+        "rooftop",
+        "other",
+    ] = Field(
+        default="ground-mounted",
+        description="Installation configuration: ground-mounted, rooftop, or other",
+    )
+
 
 class AnalysisResponse(BaseModel):
     solar_features: dict
@@ -64,6 +83,11 @@ class AnalysisResponse(BaseModel):
     energy_yield: dict
     financial_metrics: dict
     recommendation_reason: str
+
+    # Dynamic deployment recommendation.
+    # Exposes priority, confidence, deployment type and reason
+    # directly to frontend consumers.
+    recommendation: DeploymentRecommendationResponse
 
     # Extended intelligence
     deployment_plan: dict

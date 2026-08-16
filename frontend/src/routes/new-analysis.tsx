@@ -32,6 +32,24 @@ import {
 
 const LocationPickerMap = lazy(() => import("@/components/analysis/location-picker-map"));
 
+
+type LocationSearchResult = {
+  place_id: number;
+  lat: string;
+  lon: string;
+  display_name: string;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
+    country?: string;
+  };
+};
+
+
 export const Route = createFileRoute("/new-analysis")({
   head: () => ({
     meta: [
@@ -73,6 +91,10 @@ function FieldLabel({
 
 function NewAnalysisPage() {
   const [draft, setDraft] = useState<AnalysisDraft>(defaultAnalysisDraft);
+  const [locationResults, setLocationResults] = useState<LocationSearchResult[]>([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [locationSearchError, setLocationSearchError] = useState("");
+  const [activeLocationIndex, setActiveLocationIndex] = useState(0);
 
   useEffect(() => {
     setDraft(loadDraft());
@@ -84,6 +106,120 @@ function NewAnalysisPage() {
       saveDraft(next);
       return next;
     });
+
+  useEffect(() => {
+    const query = draft.searchQuery.trim();
+
+    if (query.length < 2) {
+      setLocationResults([]);
+      setLocationSearchError("");
+      setIsSearchingLocation(false);
+      setActiveLocationIndex(0);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const timer = window.setTimeout(async () => {
+      setIsSearchingLocation(true);
+      setLocationSearchError("");
+
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          format: "jsonv2",
+          addressdetails: "1",
+          limit: "5",
+          "accept-language": "en",
+        });
+
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+          {
+            signal: controller.signal,
+            headers: {
+              Accept: "application/json",
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Location search failed: ${response.status}`);
+        }
+
+        const results = (await response.json()) as LocationSearchResult[];
+
+        setLocationResults(results);
+        setActiveLocationIndex(0);
+
+        if (results.length === 0) {
+          setLocationSearchError("No matching locations found.");
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        console.error("Location search failed:", error);
+        setLocationResults([]);
+        setLocationSearchError("Unable to search locations right now.");
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearchingLocation(false);
+        }
+      }
+    }, 450);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [draft.searchQuery]);
+
+  const selectLocation = async (result: LocationSearchResult) => {
+    const latitude = Number(result.lat);
+    const longitude = Number(result.lon);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      toast.error("The selected location returned invalid coordinates.");
+      return;
+    }
+
+    const formattedLatitude = latitude.toFixed(4);
+    const formattedLongitude = longitude.toFixed(4);
+
+    setLocationResults([]);
+    setLocationSearchError("");
+    setActiveLocationIndex(0);
+
+    update({
+      searchQuery: result.display_name,
+      latitude: formattedLatitude,
+      longitude: formattedLongitude,
+      locationName: result.display_name,
+      elevation: "—",
+      terrainType: "—",
+      timezone: "—",
+    });
+
+    try {
+      const resolved = await resolveLocation(latitude, longitude);
+
+      update({
+        searchQuery: result.display_name,
+        latitude: formattedLatitude,
+        longitude: formattedLongitude,
+        locationName: resolved.name || result.display_name,
+        elevation: resolved.elevation,
+        terrainType: resolved.terrainType,
+        timezone: resolved.timezone,
+      });
+
+      toast.success(`Location selected: ${resolved.name || result.display_name}`);
+    } catch {
+      toast.success(`Location selected: ${result.display_name}`);
+    }
+  };
 
   const lat = Number(draft.latitude);
   const lon = Number(draft.longitude);
@@ -154,9 +290,96 @@ function NewAnalysisPage() {
                     className="pr-9"
                     placeholder="Search city, district or address"
                     value={draft.searchQuery}
-                    onChange={(e) => update({ searchQuery: e.target.value })}
+                    autoComplete="off"
+                    role="combobox"
+                    aria-expanded={locationResults.length > 0}
+                    aria-controls="location-search-results"
+                    aria-autocomplete="list"
+                    onChange={(e) => {
+                      update({ searchQuery: e.target.value });
+                      setLocationSearchError("");
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "ArrowDown" && locationResults.length > 0) {
+                        event.preventDefault();
+                        setActiveLocationIndex((current) =>
+                          Math.min(current + 1, locationResults.length - 1),
+                        );
+                      }
+
+                      if (event.key === "ArrowUp" && locationResults.length > 0) {
+                        event.preventDefault();
+                        setActiveLocationIndex((current) => Math.max(current - 1, 0));
+                      }
+
+                      if (event.key === "Enter" && locationResults.length > 0) {
+                        event.preventDefault();
+                        void selectLocation(locationResults[activeLocationIndex]);
+                      }
+
+                      if (event.key === "Escape") {
+                        setLocationResults([]);
+                        setLocationSearchError("");
+                      }
+                    }}
                   />
+
                   <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+
+                  {(locationResults.length > 0 ||
+                    isSearchingLocation ||
+                    locationSearchError) && (
+                    <div
+                      id="location-search-results"
+                      role="listbox"
+                      className="bg-background absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-border shadow-lg"
+                    >
+                      {isSearchingLocation && (
+                        <div className="text-helper px-3 py-3">
+                          Searching locations...
+                        </div>
+                      )}
+
+                      {!isSearchingLocation &&
+                        locationResults.map((result, index) => (
+                          <button
+                            key={result.place_id}
+                            type="button"
+                            role="option"
+                            aria-selected={index === activeLocationIndex}
+                            className={`block w-full px-3 py-2.5 text-left transition-colors ${
+                              index === activeLocationIndex
+                                ? "bg-primary/10"
+                                : "hover:bg-muted"
+                            }`}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              void selectLocation(result);
+                            }}
+                            onMouseEnter={() => setActiveLocationIndex(index)}
+                          >
+                            <span className="text-label block font-medium">
+                              {result.address?.city ||
+                                result.address?.town ||
+                                result.address?.village ||
+                                result.address?.municipality ||
+                                result.display_name.split(",")[0]}
+                            </span>
+                            <span className="text-helper mt-0.5 block truncate">
+                              {result.display_name}
+                            </span>
+                          </button>
+                        ))}
+
+                      {!isSearchingLocation &&
+                        locationResults.length === 0 &&
+                        locationSearchError && (
+                          <div className="text-helper px-3 py-3">
+                            {locationSearchError}
+                          </div>
+                        )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

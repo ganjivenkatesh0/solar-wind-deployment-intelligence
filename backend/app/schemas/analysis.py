@@ -46,6 +46,12 @@ class AnalysisRequest(BaseModel):
     land_area_hectares: float = Field(..., gt=0)
     available_budget: float = Field(..., gt=0)
 
+    location_name: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Human-readable site location name.",
+    )
+
     # Optional for backward compatibility with existing API clients/tests.
     # New Analysis UI always sends these values.
     project_type: Literal["solar", "wind", "hybrid"] = Field(

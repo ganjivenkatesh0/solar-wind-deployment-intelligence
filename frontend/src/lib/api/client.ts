@@ -2,6 +2,29 @@ const API_BASE_URL =
   import.meta.env["VITE_API_BASE_URL"]?.replace(/\/$/, "") ||
   "http://localhost:8000";
 
+const CLIENT_ID_STORAGE_KEY = "solar-wind-client-id";
+
+function getClientId(): string {
+  if (typeof window === "undefined") {
+    return "anonymous";
+  }
+
+  const existing = window.localStorage.getItem(CLIENT_ID_STORAGE_KEY);
+
+  if (existing) {
+    return existing;
+  }
+
+  const generated =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  window.localStorage.setItem(CLIENT_ID_STORAGE_KEY, generated);
+
+  return generated;
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
@@ -10,6 +33,7 @@ export async function apiRequest<T>(
     ...options,
     headers: {
       "Content-Type": "application/json",
+      "X-Client-ID": getClientId(),
       ...(options.headers ?? {}),
     },
   });

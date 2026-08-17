@@ -14,7 +14,7 @@ export type AnalysisHistoryApiRecord = {
   recommended_deployment: string;
   status: "Completed" | "Failed" | "Running" | string;
   created_at: string;
-  response_data: Record<string, unknown>;
+  response_data?: Record<string, unknown>;
 };
 
 export type AnalysisHistoryListResponse = {

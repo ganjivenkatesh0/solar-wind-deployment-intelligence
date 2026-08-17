@@ -113,6 +113,9 @@ export type AnalysisResponse = {
     [key: string]: unknown;
   };
 
+  solar_score: number;
+  wind_score: number;
+
   renewable_score: number;
   terrain_score: number;
   infrastructure_score: number;

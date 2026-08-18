@@ -11,6 +11,8 @@ export type AnalysisStatus = "Completed" | "Failed" | "Running";
 
 export type AnalysisRecord = {
   id: string;
+  requestData?: Record<string, unknown>;
+  responseData?: Record<string, unknown>;
   location: string;
   coordinatesLabel: string;
   dateLabel: string;

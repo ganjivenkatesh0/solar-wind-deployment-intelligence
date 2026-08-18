@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy.orm import Session
 
+from app.database.database import get_db
 from app.schemas.analysis import AnalysisRequest, AnalysisResponse
+from app.services.analysis_history_service import AnalysisHistoryService
 from app.services.analysis_pipeline import AnalysisPipelineService
 
 router = APIRouter(
@@ -16,24 +19,27 @@ analysis_service = AnalysisPipelineService()
     response_model=AnalysisResponse,
     summary="Analyze Renewable Energy Site",
 )
-def analyze_site(request: AnalysisRequest):
+def analyze_site(
+    request: AnalysisRequest,
+    x_client_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
     """
-    Perform complete renewable energy site analysis.
+    Perform complete renewable energy site analysis and
+    persist the completed result in analysis history.
+    """
 
-    This endpoint runs the end-to-end analysis pipeline,
-    including:
-    - Solar feature extraction
-    - Wind assessment
-    - Category scoring
-    - Overall suitability scoring
-    - Energy estimation
-    - Deployment recommendation
-    - Capacity planning
-    - Expansion analysis
-    - Deployment optimization
-    """
     try:
-        return analysis_service.analyze_site(request)
+        result = analysis_service.analyze_site(request)
+
+        AnalysisHistoryService.create(
+            db,
+            request=request,
+            response=result,
+            client_id=x_client_id or "anonymous",
+        )
+
+        return result
 
     except ValueError as exc:
         message = str(exc)

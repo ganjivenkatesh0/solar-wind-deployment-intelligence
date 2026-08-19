@@ -48,7 +48,9 @@ export function ReportPreviewPanel({ record }: { record: ReportRecord }) {
             </div>
           </div>
 
-          <h3 className="mt-3 text-[1.15rem] leading-7 font-bold tracking-tight">{record.subtitle}</h3>
+          <h3 className="mt-3 text-[1.15rem] leading-7 font-bold tracking-tight">
+            {record.subtitle}
+          </h3>
           <div className="mt-2">
             <StatusBadge tone="success">{record.id}</StatusBadge>
           </div>
@@ -131,7 +133,7 @@ export function ReportInsights({ record }: { record: ReportRecord }) {
   const cards = [
     {
       label: "Overall Suitability Score",
-      value: record.score.toFixed(1),
+      value: record.score === null ? "-" : record.score.toFixed(1),
       suffix: "/100",
       caption: record.scoreLabel,
       icon: ScoreIcon,
@@ -171,9 +173,16 @@ export function ReportInsights({ record }: { record: ReportRecord }) {
               </span>
               <p className="text-helper leading-tight">{card.label}</p>
             </div>
-            <p className={cn("mt-2 text-[1.1rem] leading-6 font-bold tracking-tight", card.valueClass)}>
+            <p
+              className={cn(
+                "mt-2 text-[1.1rem] leading-6 font-bold tracking-tight",
+                card.valueClass,
+              )}
+            >
               {card.value}
-              {card.suffix ? <span className="text-helper ml-1 font-medium">{card.suffix}</span> : null}
+              {card.suffix ? (
+                <span className="text-helper ml-1 font-medium">{card.suffix}</span>
+              ) : null}
             </p>
             {card.caption ? <p className="text-helper mt-0.5">{card.caption}</p> : null}
           </div>
@@ -197,7 +206,9 @@ export function ReportQuickActions({ totalReports }: { totalReports: number }) {
         </Button>
         <Button
           variant="outline"
-          onClick={() => toast.info("Report scheduling will be available once reporting jobs are connected.")}
+          onClick={() =>
+            toast.info("Report scheduling will be available once reporting jobs are connected.")
+          }
         >
           <CalendarClock className="size-4" />
           Schedule Reports

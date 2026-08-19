@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -29,17 +30,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EmptyState } from "@/components/ui/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
+import {
+  deleteAnalysisHistory,
+  downloadAnalysisHistory,
+  listAnalysisHistory,
+} from "@/lib/api/analysis-history";
 import { FilterIcon, ReportIcon, SearchIcon } from "@/lib/icons";
 import {
-  defaultReportId,
+  mapAnalysisToReport,
   matchesReportFilter,
   matchesReportQuery,
   reportFilters,
-  reportRecords,
   reportSorts,
   reportTabs,
-  reportsSummary,
   sortReports,
   type ReportFilterId,
   type ReportRecord,
@@ -72,6 +76,48 @@ export const Route = createFileRoute("/reports")({
 
 function ReportsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const reportsQuery = useQuery({
+    queryKey: ["reports"],
+    queryFn: () => listAnalysisHistory(1, 100),
+  });
+  const reportRecords = useMemo(
+    () => reportsQuery.data?.items.map(mapAnalysisToReport) ?? [],
+    [reportsQuery.data],
+  );
+  const reportsSummary = useMemo(
+    () => [
+      {
+        label: "Total Reports",
+        value: String(reportRecords.length),
+        caption: "All time generated",
+        icon: "report" as const,
+        tone: "primary" as const,
+      },
+      {
+        label: "Completed",
+        value: String(reportRecords.filter((record) => record.status === "Completed").length),
+        caption: "Successfully generated",
+        icon: "check" as const,
+        tone: "info" as const,
+      },
+      {
+        label: "In Progress",
+        value: String(reportRecords.filter((record) => record.status === "In Progress").length),
+        caption: "Currently generating",
+        icon: "progress" as const,
+        tone: "hybrid" as const,
+      },
+      {
+        label: "Downloads",
+        value: String(reportRecords.reduce((total, record) => total + record.downloads, 0)),
+        caption: "Total downloads",
+        icon: "download" as const,
+        tone: "solar" as const,
+      },
+    ],
+    [reportRecords],
+  );
   const [tab, setTab] = useState<ReportTabId>("all");
   const [topQuery, setTopQuery] = useState("");
   const [query, setQuery] = useState("");
@@ -79,14 +125,12 @@ function ReportsPage() {
   const [sort, setSort] = useState<ReportSortId>("newest");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(7);
-  const [selectedId, setSelectedId] = useState(defaultReportId);
-  const [deleted, setDeleted] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState("");
 
   const activeQuery = `${topQuery} ${query}`.trim();
 
   const filtered = useMemo(() => {
     const scoped = reportRecords.filter((record) => {
-      if (deleted.includes(record.id)) return false;
       if (tab === "mine") return record.ownership === "mine";
       if (tab === "shared") return record.ownership === "shared";
       return true;
@@ -98,7 +142,7 @@ function ReportsPage() {
         matchesReportFilter(record, filter),
     );
     return sortReports(matched, sort);
-  }, [deleted, tab, topQuery, query, filter, sort]);
+  }, [reportRecords, tab, topQuery, query, filter, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const currentPage = Math.min(page, pageCount);
@@ -109,9 +153,7 @@ function ReportsPage() {
     : "No results";
 
   const selected =
-    reportRecords.find((r) => r.id === selectedId && !deleted.includes(r.id)) ??
-    filtered[0] ??
-    reportRecords[0]!;
+    reportRecords.find((r) => r.id === selectedId) ?? filtered[0] ?? reportRecords[0];
 
   const openReport = (record: ReportRecord) => {
     if (record.status === "In Progress") {
@@ -122,6 +164,40 @@ function ReportsPage() {
   };
 
   const resetPage = () => setPage(1);
+
+  const downloadReport = async (record: ReportRecord) => {
+    try {
+      const blob = await downloadAnalysisHistory(record.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${record.id}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${record.name}.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to download report.");
+    }
+  };
+
+  if (reportsQuery.isLoading) {
+    return (
+      <PageContainer>
+        <LoadingState message="Loading reports…" />
+      </PageContainer>
+    );
+  }
+
+  if (reportsQuery.isError) {
+    return (
+      <PageContainer>
+        <ErrorState
+          description={reportsQuery.error.message}
+          onRetry={() => void reportsQuery.refetch()}
+        />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
@@ -163,7 +239,6 @@ function ReportsPage() {
         </div>
       </div>
 
-
       <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-4">
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -174,7 +249,11 @@ function ReportsPage() {
 
           <section className="surface-card min-w-0 overflow-hidden">
             <div className="border-b border-border">
-              <div role="tablist" aria-label="Report groups" className="flex min-w-0 gap-1 overflow-x-auto px-2">
+              <div
+                role="tablist"
+                aria-label="Report groups"
+                className="flex min-w-0 gap-1 overflow-x-auto px-2"
+              >
                 {reportTabs.map((item) => {
                   const active = item.id === tab;
                   return (
@@ -228,7 +307,9 @@ function ReportsPage() {
                         <FilterIcon className="size-4" />
                         Filter
                         {filter !== "all" ? (
-                          <span className="text-primary ml-1 text-xs font-semibold">· {filter}</span>
+                          <span className="text-primary ml-1 text-xs font-semibold">
+                            · {filter}
+                          </span>
                         ) : null}
                       </Button>
                     </DropdownMenuTrigger>
@@ -273,7 +354,11 @@ function ReportsPage() {
                   <div className="p-4">
                     <EmptyState
                       icon={<ReportIcon className="size-6" />}
-                      title={activeQuery || filter !== "all" ? "No reports match your search" : "No reports yet"}
+                      title={
+                        activeQuery || filter !== "all"
+                          ? "No reports match your search"
+                          : "No reports yet"
+                      }
                       description={
                         activeQuery || filter !== "all"
                           ? "Try a different keyword, or clear the filters to see all reports."
@@ -304,15 +389,31 @@ function ReportsPage() {
                   <>
                     <ReportsTable
                       rows={rows}
-                      selectedId={selected.id}
+                      selectedId={selected?.id ?? ""}
                       onSelect={setSelectedId}
                       onView={openReport}
-                      onDownload={(record) => toast.success(`Downloading ${record.name} (PDF)…`)}
-                      onRetry={(record) => toast.info(`Regenerating ${record.name}…`)}
-                      onShare={(record) => toast.success(`Link to ${record.id} copied.`)}
+                      onDownload={(record) => void downloadReport(record)}
+                      onRetry={(record) =>
+                        toast.info(`Regeneration is not supported for ${record.id}.`)
+                      }
+                      onShare={(record) => {
+                        void navigator.clipboard.writeText(
+                          `${window.location.origin}/reports/${record.id}`,
+                        );
+                        toast.success(`Link to ${record.id} copied.`);
+                      }}
                       onDelete={(record) => {
-                        setDeleted((prev) => [...prev, record.id]);
-                        toast.success(`${record.name} deleted.`);
+                        if (!window.confirm(`Delete ${record.name}?`)) return;
+                        void deleteAnalysisHistory(record.id)
+                          .then(() => {
+                            void queryClient.invalidateQueries({ queryKey: ["reports"] });
+                            toast.success(`${record.name} deleted.`);
+                          })
+                          .catch((error: unknown) => {
+                            toast.error(
+                              error instanceof Error ? error.message : "Unable to delete report.",
+                            );
+                          });
                       }}
                     />
                     <ReportsPagination
@@ -334,12 +435,15 @@ function ReportsPage() {
         </div>
 
         <aside className="min-w-0 space-y-4">
-          <ReportPreviewPanel record={selected} />
-          <ReportInsights record={selected} />
-          <ReportQuickActions totalReports={reportRecords.length - deleted.length} />
+          {selected ? (
+            <>
+              <ReportPreviewPanel record={selected} />
+              <ReportInsights record={selected} />
+            </>
+          ) : null}
+          <ReportQuickActions totalReports={reportRecords.length} />
         </aside>
       </div>
-
     </PageContainer>
   );
 }

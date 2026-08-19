@@ -19,6 +19,56 @@ from app.schemas.analysis_history import (
 
 class AnalysisHistoryService:
     @staticmethod
+    def build_pdf(record: AnalysisHistory) -> bytes:
+        lines = [
+            f"{record.analysis_id} Report",
+            f"Location: {record.location_name or 'Unavailable'}",
+            f"Coordinates: {record.latitude:.4f}, {record.longitude:.4f}",
+            f"Project type: {record.project_type}",
+            f"Installation: {record.installation_type}",
+            f"Suitability score: {record.overall_site_score:.1f}/100",
+            f"Recommended deployment: {record.recommended_deployment}",
+            f"Land area: {record.land_area_hectares:.2f} hectares",
+            f"Available budget: {record.available_budget:.2f}",
+            f"Generated: {record.created_at.isoformat()}",
+        ]
+
+        def escape(value: str) -> str:
+            return value.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+        content_lines = ["BT", "/F1 12 Tf", "50 760 Td"]
+        for index, line in enumerate(lines):
+            if index:
+                content_lines.append("0 -22 Td")
+            content_lines.append(f"({escape(line)}) Tj")
+        content_lines.append("ET")
+        content = "\n".join(content_lines).encode("latin-1", "replace")
+
+        objects = [
+            b"<< /Type /Catalog /Pages 2 0 R >>",
+            b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+            b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+            b"<< /Length " + str(len(content)).encode() + b" >>\nstream\n" + content + b"\nendstream",
+        ]
+
+        pdf = bytearray(b"%PDF-1.4\n")
+        offsets = [0]
+        for number, obj in enumerate(objects, start=1):
+            offsets.append(len(pdf))
+            pdf.extend(f"{number} 0 obj\n".encode())
+            pdf.extend(obj)
+            pdf.extend(b"\nendobj\n")
+
+        xref_offset = len(pdf)
+        pdf.extend(f"xref\n0 {len(objects) + 1}\n".encode())
+        pdf.extend(b"0000000000 65535 f \n")
+        for offset in offsets[1:]:
+            pdf.extend(f"{offset:010d} 00000 n \n".encode())
+        pdf.extend(f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF".encode())
+        return bytes(pdf)
+
+    @staticmethod
     def create(
         db: Session,
         *,

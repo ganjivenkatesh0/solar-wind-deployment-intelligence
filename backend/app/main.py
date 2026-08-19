@@ -1,4 +1,6 @@
-﻿from fastapi import FastAPI
+﻿import os
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.analysis import router as analysis_router
@@ -28,6 +30,12 @@ app = FastAPI(
     version="0.1.0"
 )
 
+frontend_origins = [
+    origin.strip()
+    for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -35,8 +43,7 @@ app.add_middleware(
         "http://localhost:8081",
         "http://127.0.0.1:8080",
         "http://127.0.0.1:8081",
-        "http://10.250.36.130:8080",
-        "http://10.250.36.130:8081",
+        *frontend_origins,
     ],
     allow_origin_regex=r"https://.*\.app\.github\.dev",
     allow_credentials=False,

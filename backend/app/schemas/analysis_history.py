@@ -20,6 +20,7 @@ class AnalysisHistorySummary(BaseModel):
     recommended_deployment: str
     status: str
     created_at: datetime
+    response_data: dict[str, Any]
 
 
 class AnalysisHistoryDetail(AnalysisHistorySummary):

@@ -1,6 +1,16 @@
+const configuredApiBaseUrl = import.meta.env["VITE_API_BASE_URL"]?.replace(/\/$/, "");
+const browserUsesRemoteOrigin =
+  typeof window !== "undefined" && !["localhost", "127.0.0.1"].includes(window.location.hostname);
+const configuredUrlIsLocalhost = Boolean(
+  configuredApiBaseUrl &&
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredApiBaseUrl),
+);
 const API_BASE_URL =
-  import.meta.env["VITE_API_BASE_URL"]?.replace(/\/$/, "") ||
-  "http://localhost:8000";
+  configuredApiBaseUrl && !(browserUsesRemoteOrigin && configuredUrlIsLocalhost)
+    ? configuredApiBaseUrl
+    : "/api";
+
+const API_TIMEOUT_MS = 120_000;
 
 const CLIENT_ID_STORAGE_KEY = "solar-wind-client-id";
 
@@ -25,41 +35,76 @@ function getClientId(): string {
   return generated;
 }
 
-export async function apiRequest<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Client-ID": getClientId(),
-      ...(options.headers ?? {}),
-    },
-  });
+export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
-  if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      signal: options.signal ?? controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Client-ID": getClientId(),
+        ...(options.headers ?? {}),
+      },
+    });
 
-    try {
-      const body = await response.json();
+    if (!response.ok) {
+      let message = `Request failed with status ${response.status}`;
 
-      if (typeof body?.detail === "string") {
-        message = body.detail;
-      } else if (Array.isArray(body?.detail)) {
-        message = body.detail
-          .map((item: { msg?: string }) => item?.msg)
-          .filter(Boolean)
-          .join(", ");
-      } else if (typeof body?.message === "string") {
-        message = body.message;
+      try {
+        const body = await response.json();
+
+        if (typeof body?.detail === "string") {
+          message = body.detail;
+        } else if (Array.isArray(body?.detail)) {
+          message = body.detail
+            .map((item: { msg?: string }) => item?.msg)
+            .filter(Boolean)
+            .join(", ");
+        } else if (typeof body?.message === "string") {
+          message = body.message;
+        }
+      } catch {
+        // Keep the default error message.
       }
-    } catch {
-      // Keep the default error message.
+
+      throw new Error(message);
     }
 
-    throw new Error(message);
+    return response.json() as Promise<T>;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("The analysis service took too long to respond. Please try again.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
+}
 
-  return response.json() as Promise<T>;
+export async function apiDownload(path: string): Promise<Blob> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      signal: controller.signal,
+      headers: { "X-Client-ID": getClientId() },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    return response.blob();
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("The report download took too long to respond. Please try again.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }

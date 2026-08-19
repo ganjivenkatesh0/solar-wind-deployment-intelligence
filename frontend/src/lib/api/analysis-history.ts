@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiDownload, apiRequest } from "./client";
 
 export type AnalysisHistoryApiRecord = {
   id: number;
@@ -14,7 +14,7 @@ export type AnalysisHistoryApiRecord = {
   recommended_deployment: string;
   status: "Completed" | "Failed" | "Running" | string;
   created_at: string;
-  response_data?: Record<string, unknown>;
+  response_data: Record<string, unknown>;
 };
 
 export type AnalysisHistoryListResponse = {
@@ -43,17 +43,11 @@ export function listAnalysisHistory(
     params.set("query", query.trim());
   }
 
-  return apiRequest<AnalysisHistoryListResponse>(
-    `/analysis-history?${params.toString()}`,
-  );
+  return apiRequest<AnalysisHistoryListResponse>(`/analysis-history?${params.toString()}`);
 }
 
-export function getAnalysisHistory(
-  analysisId: string,
-): Promise<AnalysisHistoryDetail> {
-  return apiRequest<AnalysisHistoryDetail>(
-    `/analysis-history/${encodeURIComponent(analysisId)}`,
-  );
+export function getAnalysisHistory(analysisId: string): Promise<AnalysisHistoryDetail> {
+  return apiRequest<AnalysisHistoryDetail>(`/analysis-history/${encodeURIComponent(analysisId)}`);
 }
 
 export function deleteAnalysisHistory(
@@ -63,4 +57,8 @@ export function deleteAnalysisHistory(
     `/analysis-history/${encodeURIComponent(analysisId)}`,
     { method: "DELETE" },
   );
+}
+
+export function downloadAnalysisHistory(analysisId: string): Promise<Blob> {
+  return apiDownload(`/analysis-history/${encodeURIComponent(analysisId)}/download`);
 }

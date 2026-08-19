@@ -6,12 +6,16 @@ from typing import Any
 
 import math
 import rasterio
+import requests
 
 
 class GlobalWindAtlasClient:
     """Client for retrieving wind-speed data from Global Wind Atlas."""
 
     DEFAULT_HEIGHT_M = 50
+    REMOTE_FALLBACK_URL = "https://api.open-meteo.com/v1/forecast"
+    REMOTE_TIMEOUT = (3, 15)
+    REMOTE_ATTEMPTS = 2
 
     def __init__(
         self,
@@ -49,9 +53,7 @@ class GlobalWindAtlasClient:
         self._validate_coordinates(latitude, longitude)
 
         if not self.raster_path.exists():
-            raise RuntimeError(
-                f"Global Wind Atlas raster not found: {self.raster_path}"
-            )
+            return self._get_remote_fallback(latitude, longitude)
 
         try:
             with rasterio.open(self.raster_path) as src:
@@ -89,6 +91,46 @@ class GlobalWindAtlasClient:
             raise RuntimeError(
                 f"Unable to read Global Wind Atlas raster: {exc}"
             ) from exc
+
+    def _get_remote_fallback(
+        self,
+        latitude: float,
+        longitude: float,
+    ) -> dict[str, Any]:
+        """Use real location-specific wind data when the local raster is absent."""
+        last_error: Exception | None = None
+        for _ in range(self.REMOTE_ATTEMPTS):
+            try:
+                response = requests.get(
+                    self.REMOTE_FALLBACK_URL,
+                    params={
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "current": "wind_speed_10m",
+                        "wind_speed_unit": "ms",
+                    },
+                    timeout=self.REMOTE_TIMEOUT,
+                )
+                response.raise_for_status()
+                current = response.json().get("current", {})
+                wind_speed = float(current["wind_speed_10m"])
+                break
+            except (KeyError, TypeError, ValueError, requests.RequestException) as exc:
+                last_error = exc
+        else:
+            raise RuntimeError(
+                "Global Wind Atlas raster is unavailable and the remote wind "
+                "fallback could not provide data."
+            ) from last_error
+
+        return {
+            "wind_speed": round(wind_speed, 4),
+            "height_m": 10,
+            "source": "Open-Meteo wind fallback",
+            "unit": "m/s",
+            "latitude": latitude,
+            "longitude": longitude,
+        }
 
     @staticmethod
     def _validate_coordinates(

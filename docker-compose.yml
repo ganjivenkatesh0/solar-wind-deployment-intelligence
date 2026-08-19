@@ -19,6 +19,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres123@db:5432/solar_wind_db
       SRTM_RASTER_PATH: /app/datasets/raw/srtm/output_SRTMGL1.tif
       GWA_RASTER_PATH: /app/datasets/raw/global_wind_atlas/IND_wind-speed_50m.tif
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-}
     ports:
       - "8000:8000"
     volumes:

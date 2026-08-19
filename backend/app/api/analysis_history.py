@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -37,6 +37,25 @@ def list_analysis_history(
         page=page,
         page_size=page_size,
         query=query,
+    )
+
+
+@router.get(
+    "/{analysis_id}/download",
+)
+def download_analysis_history(
+    analysis_id: str,
+    client_id: str = Depends(get_client_id),
+    db: Session = Depends(get_db),
+):
+    record = AnalysisHistoryService.get(db, analysis_id=analysis_id, client_id=client_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Analysis history record not found.")
+
+    return Response(
+        content=AnalysisHistoryService.build_pdf(record),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{analysis_id}.pdf"'},
     )
 
 

@@ -11,7 +11,7 @@ def test_srtm_returns_location_specific_elevation():
         longitude=78.4867,
     )
 
-    assert result["source"] == "SRTM"
+    assert result["source"] in {"SRTM", "OpenTopoData SRTM30m"}
     assert result["unit"] == "m"
     assert result["elevation"] > 0
 
@@ -24,7 +24,7 @@ def test_srtm_returns_local_slope():
         longitude=78.4867,
     )
 
-    assert result["source"] == "SRTM"
+    assert result["source"] in {"SRTM", "OpenTopoData SRTM30m"}
     assert result["unit"] == "degrees"
     assert result["slope"] >= 0
 

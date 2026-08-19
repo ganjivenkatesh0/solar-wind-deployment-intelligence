@@ -33,6 +33,11 @@ import {
 } from "@/lib/dashboard-data";
 import { buildDashboardSectionData } from "@/lib/dashboard-section-data";
 import type { AnalysisResponse } from "@/lib/api/analysis";
+import {
+  downloadAnalysisHistoryFile,
+  listAnalysisHistory,
+} from "@/lib/api/analysis-history";
+import { saveBlobDownload } from "@/lib/api/client";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -63,6 +68,27 @@ function DashboardPage() {
   const [dataError, setDataError] = useState<string | null>(null);
   const [data, setData] = useState<ReturnType<typeof createDashboardData> | null>(null);
   const [sectionData, setSectionData] = useState<ReturnType<typeof buildDashboardSectionData> | null>(null);
+
+  const downloadCurrentReport = async () => {
+    try {
+      const history = await listAnalysisHistory(1, 100);
+      const currentId = sessionStorage.getItem("latestAnalysisId");
+      const latest =
+        history.items.find(
+          (item) => item.analysis_id === currentId && item.status === "Completed",
+        ) ?? history.items.find((item) => item.status === "Completed");
+      if (!latest) {
+        toast.info("No completed analysis is available to download.");
+        return;
+      }
+
+      const { blob, filename } = await downloadAnalysisHistoryFile(latest.analysis_id);
+      saveBlobDownload(blob, filename);
+      toast.success("Report downloaded.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to download report.");
+    }
+  };
 
   useEffect(() => {
     try {
@@ -161,7 +187,7 @@ function DashboardPage() {
       <div className="space-y-4">
         <SummaryCards
           site={data.site}
-          onDownload={() => toast.success("Report export will be available once the analysis API is connected.")}
+          onDownload={() => void downloadCurrentReport()}
         />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

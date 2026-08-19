@@ -1,4 +1,4 @@
-import { apiDownload, apiRequest } from "./client";
+import { apiDownload, apiDownloadFile, apiRequest } from "./client";
 
 export type AnalysisHistoryApiRecord = {
   id: number;
@@ -61,4 +61,13 @@ export function deleteAnalysisHistory(
 
 export function downloadAnalysisHistory(analysisId: string): Promise<Blob> {
   return apiDownload(`/analysis-history/${encodeURIComponent(analysisId)}/download`);
+}
+
+export function downloadAnalysisHistoryFile(
+  analysisId: string,
+): Promise<{ blob: Blob; filename: string }> {
+  return apiDownloadFile(
+    `/analysis-history/${encodeURIComponent(analysisId)}/download`,
+    `${analysisId}.pdf`,
+  );
 }

@@ -85,6 +85,14 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 }
 
 export async function apiDownload(path: string): Promise<Blob> {
+  const { blob } = await apiDownloadFile(path);
+  return blob;
+}
+
+export async function apiDownloadFile(
+  path: string,
+  fallbackFilename = "download",
+): Promise<{ blob: Blob; filename: string }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
@@ -95,10 +103,24 @@ export async function apiDownload(path: string): Promise<Blob> {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+      let message = `Request failed with status ${response.status}`;
+      try {
+        const body = await response.json();
+        if (typeof body?.detail === "string") message = body.detail;
+      } catch {
+        // Keep the default error message.
+      }
+      throw new Error(message);
     }
 
-    return response.blob();
+    const disposition = response.headers.get("Content-Disposition");
+    const encodedFilename = disposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+    const filename =
+      (encodedFilename
+        ? decodeURIComponent(encodedFilename)
+        : disposition?.match(/filename="?([^";]+)"?/i)?.[1]) || fallbackFilename;
+
+    return { blob: await response.blob(), filename };
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error("The report download took too long to respond. Please try again.");
@@ -107,4 +129,13 @@ export async function apiDownload(path: string): Promise<Blob> {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export function saveBlobDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }

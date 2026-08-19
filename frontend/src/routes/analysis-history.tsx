@@ -6,10 +6,12 @@ import { toast } from "sonner";
 import { PageContainer, PageHeader } from "@/components/layout/page-container";
 import {
   deleteAnalysisHistory,
+  downloadAnalysisHistoryFile,
   getAnalysisHistory,
   listAnalysisHistory,
   type AnalysisHistoryApiRecord,
 } from "@/lib/api/analysis-history";
+import { saveBlobDownload } from "@/lib/api/client";
 import {
   AnalysisDetailsPanel,
   PerformanceSnapshotPanel,
@@ -439,10 +441,72 @@ function AnalysisHistoryPage() {
     }
   }
 
-  function handleDownload(record: AnalysisRecord) {
-    toast.success(`Preparing report for ${record.id}`, {
-      description: "Report generation will be connected to your account shortly.",
+  async function handleDownload(record: AnalysisRecord) {
+    try {
+      const { blob, filename } = await downloadAnalysisHistoryFile(record.id);
+      saveBlobDownload(blob, filename);
+      toast.success(`${record.id} report downloaded.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : `Unable to download ${record.id}.`,
+      );
+    }
+  }
+
+  function escapeCsv(value: unknown) {
+    const text = value === null || value === undefined ? "" : String(value);
+    return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  function exportHistory() {
+    if (!records.length) {
+      toast.info("No analysis records are available to export.");
+      return;
+    }
+
+    const headers = [
+      "Analysis ID",
+      "Location",
+      "Latitude",
+      "Longitude",
+      "Project Type",
+      "Installation Type",
+      "Land Area (hectares)",
+      "Available Budget",
+      "Suitability Score",
+      "Recommended Deployment",
+      "Status",
+      "Created At",
+    ];
+    const csvRows = filtered.map((record) => {
+      const requestData = record.requestData ?? {};
+      const responseData = record.responseData ?? {};
+
+      return [
+        record.id,
+        record.location,
+        requestData["latitude"],
+        requestData["longitude"],
+        requestData["project_type"],
+        requestData["installation_type"],
+        requestData["land_area_hectares"],
+        requestData["available_budget"],
+        record.score,
+        responseData["recommended_deployment"],
+        record.status,
+        `${record.dateLabel} ${record.timeLabel}`,
+      ];
     });
+    const csv = [headers, ...csvRows]
+      .map((row) => row.map(escapeCsv).join(","))
+      .join("\r\n");
+    saveBlobDownload(
+      new Blob([`\uFEFF${csv}\r\n`], { type: "text/csv;charset=utf-8" }),
+      "analysis-history.csv",
+    );
+    toast.success("Analysis history exported.");
   }
 
   function handleRetry(record: AnalysisRecord) {
@@ -648,11 +712,7 @@ function AnalysisHistoryPage() {
               <Button
                 variant="outline"
                 className="gap-2"
-                onClick={() =>
-                  toast.success("Export started", {
-                    description: `${filtered.length} analyses will be exported as CSV.`,
-                  })
-                }
+                onClick={exportHistory}
               >
                 <DownloadIcon className="size-4" />
                 Export History

@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.analysis import router as analysis_router
 from app.api.analysis_history import router as analysis_history_router
+from app.api.report_schedules import router as report_schedules_router
 from app.api.home import router as home_router
 from app.api.projects import router as projects_router
 from app.api.sites import router as sites_router
@@ -21,6 +22,7 @@ from app.database.database import Base, engine
 from app.models.project import Project
 from app.models.feature import Feature
 from app.models.analysis_history import AnalysisHistory
+from app.models.report_schedule import ReportSchedule
 
 AnalysisHistory.__table__.create(bind=engine, checkfirst=True)
 Base.metadata.create_all(bind=engine)
@@ -61,4 +63,5 @@ app.include_router(deployment.router)
 app.include_router(optimization.router)
 app.include_router(analysis_router)
 app.include_router(analysis_history_router)
+app.include_router(report_schedules_router)
 

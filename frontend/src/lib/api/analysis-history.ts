@@ -46,6 +46,17 @@ export function listAnalysisHistory(
   return apiRequest<AnalysisHistoryListResponse>(`/analysis-history?${params.toString()}`);
 }
 
+export async function listAllAnalysisHistory(): Promise<AnalysisHistoryApiRecord[]> {
+  const firstPage = await listAnalysisHistory(1, 100);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(firstPage.pages - 1, 0) }, (_, index) =>
+      listAnalysisHistory(index + 2, 100),
+    ),
+  );
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.items);
+}
+
 export function getAnalysisHistory(analysisId: string): Promise<AnalysisHistoryDetail> {
   return apiRequest<AnalysisHistoryDetail>(`/analysis-history/${encodeURIComponent(analysisId)}`);
 }

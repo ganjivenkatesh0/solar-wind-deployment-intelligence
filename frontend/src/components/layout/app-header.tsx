@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Menu, Moon, Sun, Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,10 +13,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/hooks/use-theme";
-import avatarUser from "@/assets/avatar-user.jpg";
+import {
+  getProfileInitials,
+  getSettings,
+  SETTINGS_UPDATED_EVENT,
+  type SettingsState,
+} from "@/lib/api/settings";
 
 export function AppHeader({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   const { theme, toggleTheme } = useTheme();
+  const [profileName, setProfileName] = useState("Ganji Venkatesh");
+  const [notifications, setNotifications] = useState<SettingsState["notifications_feed"]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  useEffect(() => {
+    const applySettings = (settings: SettingsState) => setProfileName(settings.account.name);
+    const handleSettingsUpdated = (event: Event) => {
+      const settings = (event as CustomEvent<SettingsState>).detail;
+      if (settings?.account?.name) applySettings(settings);
+    };
+
+    getSettings()
+      .then(applySettings)
+      .catch(() => undefined);
+    window.addEventListener(SETTINGS_UPDATED_EVENT, handleSettingsUpdated);
+
+    return () => window.removeEventListener(SETTINGS_UPDATED_EVENT, handleSettingsUpdated);
+  }, []);
+
+  const loadNotifications = (open: boolean) => {
+    if (!open) return;
+    setNotificationsLoading(true);
+    getSettings()
+      .then((settings) => setNotifications(settings.notifications_feed))
+      .catch(() => setNotifications([]))
+      .finally(() => setNotificationsLoading(false));
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -50,20 +83,44 @@ export function AppHeader({ onOpenSidebar }: { onOpenSidebar: () => void }) {
             {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
           </Button>
 
-          <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-            <Bell className="size-5" />
-            <span className="absolute top-2 right-2 size-2 rounded-full bg-primary" />
-          </Button>
+          <DropdownMenu onOpenChange={loadNotifications}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+                <Bell className="size-5" />
+                <span className="absolute top-2 right-2 size-2 rounded-full bg-primary" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {notificationsLoading ? (
+                <DropdownMenuItem disabled>Loading notifications...</DropdownMenuItem>
+              ) : notifications.length ? (
+                notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className="items-start gap-2 whitespace-normal"
+                  >
+                    <div>
+                      <p className="font-medium">{notification.title}</p>
+                      <p className="text-helper">{notification.description}</p>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>No new notifications</DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-accent/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none">
                 <Avatar className="size-8">
-                  <AvatarImage src={avatarUser} alt="" />
-                  <AvatarFallback>AK</AvatarFallback>
+                  <AvatarFallback>{getProfileInitials(profileName)}</AvatarFallback>
                 </Avatar>
                 <span className="hidden min-w-0 text-left sm:block">
-                  <span className="text-label block truncate">Arjun Kumar</span>
+                  <span className="text-label block truncate">{profileName}</span>
                   <span className="text-helper block truncate">Energy Analyst</span>
                 </span>
                 <ChevronDown className="hidden size-4 text-muted-foreground sm:block" />

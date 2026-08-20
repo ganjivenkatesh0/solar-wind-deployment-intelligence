@@ -1,6 +1,12 @@
-import { useState } from "react";
-import { Building2, Database, Mail, Phone, ShieldCheck, SlidersHorizontal, User } from "lucide-react";
-import { toast } from "sonner";
+import {
+  Building2,
+  Database,
+  Mail,
+  Phone,
+  ShieldCheck,
+  SlidersHorizontal,
+  User,
+} from "lucide-react";
 
 import { SettingRow, SettingsCard } from "@/components/settings/settings-primitives";
 import { Button } from "@/components/ui/button";
@@ -9,30 +15,41 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Switch } from "@/components/ui/switch";
+import type { SettingsState } from "@/lib/api/settings";
 import {
   dataSources,
   notificationSettings,
   preferenceWeights,
   securityItems,
-  accountProfile,
   systemInformation,
 } from "@/lib/settings-data";
 
-export function AccountTab() {
+export function AccountTab({
+  account,
+  onChange,
+  onSave,
+}: {
+  account: SettingsState["account"];
+  onChange: (key: keyof SettingsState["account"], value: string) => void;
+  onSave: () => void;
+}) {
   const fields = [
-    { id: "name", label: "Full name", value: accountProfile.name, icon: User },
-    { id: "email", label: "Email address", value: accountProfile.email, icon: Mail },
-    { id: "org", label: "Organization", value: accountProfile.organization, icon: Building2 },
-    { id: "phone", label: "Phone", value: accountProfile.phone, icon: Phone },
+    { id: "name" as const, label: "Full name", value: account.name, icon: User },
+    { id: "email" as const, label: "Email address", value: account.email, icon: Mail },
+    {
+      id: "organization" as const,
+      label: "Organization",
+      value: account.organization,
+      icon: Building2,
+    },
+    { id: "phone" as const, label: "Phone", value: account.phone, icon: Phone },
   ];
 
   return (
     <SettingsCard
       title="Account Settings"
       description="Update your profile details and contact information."
-      footer={
-        <Button onClick={() => toast.success("Profile updated")}>Save Profile</Button>
-      }
+      footer={<Button onClick={onSave}>Save Profile</Button>}
     >
       <div className="grid gap-4 sm:grid-cols-2">
         {fields.map((field) => (
@@ -40,7 +57,11 @@ export function AccountTab() {
             <Label htmlFor={`account-${field.id}`} className="text-label">
               {field.label}
             </Label>
-            <Input id={`account-${field.id}`} defaultValue={field.value} />
+            <Input
+              id={`account-${field.id}`}
+              value={field.value}
+              onChange={(event) => onChange(field.id, event.target.value)}
+            />
           </div>
         ))}
       </div>
@@ -76,16 +97,29 @@ export function DataSourcesTab() {
   );
 }
 
-export function NotificationsTab() {
-  const [enabled, setEnabled] = useState<Record<string, boolean>>(
-    Object.fromEntries(notificationSettings.map((n) => [n.id, n.enabled])),
-  );
+export function NotificationsTab({
+  enabled,
+  onChange,
+  onSave,
+}: {
+  enabled: SettingsState["notifications"];
+  onChange: (key: string, value: boolean) => void;
+  onSave: () => void;
+}) {
+  const notificationKey = (id: string) =>
+    ({
+      "analysis-complete": "analysis_complete",
+      "report-ready": "report_ready",
+      "data-source": "data_source",
+      "weekly-digest": "weekly_digest",
+      "product-updates": "product_updates",
+    })[id] ?? id;
 
   return (
     <SettingsCard
       title="Notifications"
       description="Choose which platform events reach your inbox."
-      footer={<Button onClick={() => toast.success("Notification preferences saved")}>Save Changes</Button>}
+      footer={<Button onClick={onSave}>Save Changes</Button>}
     >
       <div className="min-w-0">
         {notificationSettings.map((item) => (
@@ -97,8 +131,8 @@ export function NotificationsTab() {
             control={
               <div className="flex sm:justify-end">
                 <Switch
-                  checked={enabled[item.id] ?? false}
-                  onCheckedChange={(value) => setEnabled((prev) => ({ ...prev, [item.id]: value }))}
+                  checked={enabled[notificationKey(item.id)] ?? false}
+                  onCheckedChange={(value) => onChange(notificationKey(item.id), value)}
                   aria-label={item.title}
                 />
               </div>
@@ -110,14 +144,24 @@ export function NotificationsTab() {
   );
 }
 
-export function PreferencesTab() {
-  const [weights, setWeights] = useState(preferenceWeights);
-
+export function PreferencesTab({
+  preferences,
+  onChange,
+  onSave,
+}: {
+  preferences: SettingsState["preferences"];
+  onChange: (key: keyof SettingsState["preferences"], value: number) => void;
+  onSave: () => void;
+}) {
+  const weights = preferenceWeights.map((item) => ({
+    ...item,
+    value: preferences[item.id as keyof SettingsState["preferences"]],
+  }));
   return (
     <SettingsCard
       title="Analysis Preferences"
       description="Default scoring weights applied to new site analyses."
-      footer={<Button onClick={() => toast.success("Default weights saved")}>Save Changes</Button>}
+      footer={<Button onClick={onSave}>Save Changes</Button>}
     >
       <div className="min-w-0 space-y-5">
         {weights.map((weight) => (
@@ -137,9 +181,7 @@ export function PreferencesTab() {
               step={5}
               aria-label={weight.label}
               onValueChange={([value]) =>
-                setWeights((prev) =>
-                  prev.map((item) => (item.id === weight.id ? { ...item, value: value ?? 0 } : item)),
-                )
+                onChange(weight.id as keyof SettingsState["preferences"], value ?? 0)
               }
             />
           </div>
@@ -149,51 +191,55 @@ export function PreferencesTab() {
   );
 }
 
-export function SecurityTab() {
-  const [enabled, setEnabled] = useState(securityItems.map((item) => item.enabled));
-
+export function SecurityTab({
+  security,
+  onChange,
+  onSave,
+}: {
+  security: SettingsState["security"];
+  onChange: (key: keyof SettingsState["security"], value: boolean) => void;
+  onSave: () => void;
+}) {
   return (
     <SettingsCard
       title="Security"
       description="Protect your account and control session behaviour."
-      footer={<Button onClick={() => toast.success("Security settings saved")}>Save Changes</Button>}
+      footer={<Button onClick={onSave}>Save Changes</Button>}
     >
       <div className="min-w-0">
-        {securityItems.map((item, index) => (
-          <SettingRow
-            key={item.title}
-            icon={ShieldCheck}
-            title={item.title}
-            description={item.description}
-            control={
-              <div className="flex sm:justify-end">
-                <Switch
-                  checked={enabled[index] ?? false}
-                  onCheckedChange={(value) =>
-                    setEnabled((prev) => prev.map((item, i) => (i === index ? value : item)))
-                  }
-                  aria-label={item.title}
-                />
-              </div>
-            }
-          />
-        ))}
+        {securityItems.map((item, index) => {
+          const key = (["two_factor", "session_timeout", "login_alerts"] as const)[index];
+          return (
+            <SettingRow
+              key={item.title}
+              icon={ShieldCheck}
+              title={item.title}
+              description={item.description}
+              control={
+                <div className="flex sm:justify-end">
+                  <Switch
+                    checked={security[key]}
+                    onCheckedChange={(value) => onChange(key, value)}
+                    aria-label={item.title}
+                  />
+                </div>
+              }
+            />
+          );
+        })}
       </div>
     </SettingsCard>
   );
 }
 
-export function SystemTab() {
+export function SystemTab({ system }: { system: SettingsState["system"] }) {
   return (
-    <SettingsCard
-      title="System"
-      description="Runtime environment and platform build information."
-    >
+    <SettingsCard title="System" description="Runtime environment and platform build information.">
       <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         {systemInformation.map((row) => (
           <div key={row.label} className="rounded-lg border border-border p-3">
             <p className="text-helper">{row.label}</p>
-            <p className="text-label mt-1">{row.value}</p>
+            <p className="text-label mt-1">{system[row.label] ?? row.value}</p>
           </div>
         ))}
       </div>

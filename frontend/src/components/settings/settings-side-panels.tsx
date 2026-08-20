@@ -1,8 +1,21 @@
-import { Activity, Archive, Clock, Database, FileText, HardDrive, Layers, RotateCcw, Server, Trash2, UploadCloud, UserCog } from "lucide-react";
+import {
+  Activity,
+  Archive,
+  Clock,
+  Database,
+  FileText,
+  HardDrive,
+  Layers,
+  RotateCcw,
+  Server,
+  Trash2,
+  UploadCloud,
+  UserCog,
+} from "lucide-react";
 import { toast } from "sonner";
 
-import avatarUser from "@/assets/avatar-user.jpg";
 import { InfoRow } from "@/components/settings/settings-primitives";
+import { getProfileInitials, type SettingsState } from "@/lib/api/settings";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,26 +27,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { accountProfile, dataStorageStats, systemInformation } from "@/lib/settings-data";
 
 const systemIcons = [Clock, Server, Database, Layers, Clock];
 const storageIcons = [FileText, HardDrive, FileText, UploadCloud];
 
-export function AccountOverviewCard() {
+export function AccountOverviewCard({
+  account = accountProfile,
+}: {
+  account?: SettingsState["account"];
+}) {
   return (
     <section className="surface-card min-w-0 p-4 sm:p-5">
       <h2 className="text-card-title">Account Overview</h2>
       <div className="mt-4 flex min-w-0 items-center gap-3">
         <Avatar className="size-12 shrink-0">
-          <AvatarImage src={avatarUser} alt="" />
-          <AvatarFallback>GV</AvatarFallback>
+          <AvatarFallback>{getProfileInitials(account.name)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0">
-          <p className="truncate text-[0.95rem] font-bold tracking-tight">{accountProfile.name}</p>
+          <p className="truncate text-[0.95rem] font-bold tracking-tight">{account.name}</p>
           <p className="text-helper truncate">{accountProfile.role}</p>
-          <p className="text-helper truncate">{accountProfile.email}</p>
+          <p className="text-helper truncate">{account.email}</p>
         </div>
       </div>
       <Button
@@ -47,7 +63,7 @@ export function AccountOverviewCard() {
   );
 }
 
-export function SystemInformationCard() {
+export function SystemInformationCard({ system = {} }: { system?: Record<string, string> }) {
   return (
     <section className="surface-card min-w-0 p-4 sm:p-5">
       <h2 className="text-card-title">System Information</h2>
@@ -57,7 +73,7 @@ export function SystemInformationCard() {
             key={row.label}
             icon={systemIcons[index] ?? Server}
             label={row.label}
-            value={row.value}
+            value={system[row.label] ?? row.value}
           />
         ))}
       </div>
@@ -72,7 +88,7 @@ export function SystemInformationCard() {
   );
 }
 
-export function DataStorageCard() {
+export function DataStorageCard({ statistics = {} }: { statistics?: Record<string, string> }) {
   return (
     <section className="surface-card min-w-0 p-4 sm:p-5">
       <h2 className="text-card-title">Data &amp; Storage</h2>
@@ -82,7 +98,7 @@ export function DataStorageCard() {
             key={row.label}
             icon={storageIcons[index] ?? Archive}
             label={row.label}
-            value={row.value}
+            value={statistics[row.label] ?? "Unavailable"}
           />
         ))}
       </div>
@@ -160,12 +176,7 @@ export function DangerZoneCard({ onResetSettings }: { onResetSettings: () => voi
         dialogTitle="Clear all application data?"
         dialogDescription="Analyses, reports and cached datasets stored in this browser will be removed. This action cannot be undone."
         onConfirm={() => {
-          try {
-            window.localStorage.clear();
-          } catch {
-            /* storage unavailable */
-          }
-          toast.success("Application data cleared");
+          toast.info("Application data clearing is unavailable while analysis history is retained");
         }}
       />
       <DangerAction

@@ -1,14 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Calendar, Clock, DollarSign, LandPlot, Monitor, Moon, Palette, Ruler, Save, Sun, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Calendar,
+  Clock,
+  DollarSign,
+  LandPlot,
+  Monitor,
+  Moon,
+  Palette,
+  Ruler,
+  Save,
+  Sun,
+  Zap,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageContainer, PageHeader } from "@/components/layout/page-container";
-import {
-  SettingRow,
-  SettingSelect,
-  SettingsCard,
-} from "@/components/settings/settings-primitives";
+import { SettingRow, SettingSelect, SettingsCard } from "@/components/settings/settings-primitives";
 import { SettingsTabs } from "@/components/settings/settings-tabs";
 import {
   AccountOverviewCard,
@@ -27,6 +35,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/hooks/use-theme";
+import { getSettings, resetSettings, updateSettings, type SettingsState } from "@/lib/api/settings";
 import {
   analysisTypeOptions,
   areaUnitOptions,
@@ -66,17 +75,122 @@ function SettingsPage() {
   const [tab, setTab] = useState<SettingsTabId>("general");
   const [general, setGeneral] = useState<GeneralSettings>(defaultGeneralSettings);
   const [compact, setCompact] = useState(false);
+  const [account, setAccount] = useState<SettingsState["account"]>({
+    name: "Ganji Venkatesh",
+    email: "ganji.venkatesh@example.com",
+    organization: "Renewables Intelligence Lab",
+    phone: "+91 98765 43210",
+  });
+  const [notifications, setNotifications] = useState<SettingsState["notifications"]>({
+    analysis_complete: true,
+    report_ready: true,
+    data_source: true,
+    weekly_digest: false,
+    product_updates: false,
+  });
+  const [preferences, setPreferences] = useState<SettingsState["preferences"]>({
+    resource: 30,
+    financial: 25,
+    infrastructure: 20,
+    environment: 15,
+    risk: 10,
+  });
+  const [security, setSecurity] = useState<SettingsState["security"]>({
+    two_factor: true,
+    session_timeout: true,
+    login_alerts: false,
+  });
+  const [system, setSystem] = useState<SettingsState["system"]>({});
+  const [statistics, setStatistics] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    getSettings()
+      .then((saved) => {
+        setGeneral({
+          analysisType: saved.general.analysis_type,
+          currency: saved.general.currency,
+          distanceUnit: saved.general.distance_unit,
+          areaUnit: saved.general.area_unit,
+          dateFormat: saved.general.date_format,
+          timeZone: saved.general.time_zone,
+        });
+        setCompact(saved.general.compact);
+        setTheme(saved.general.theme);
+        setAccount(saved.account);
+        setNotifications(saved.notifications);
+        setPreferences(saved.preferences);
+        setSecurity(saved.security);
+        setSystem(saved.system);
+        setStatistics(saved.statistics);
+      })
+      .catch((error) =>
+        toast.error(error instanceof Error ? error.message : "Failed to load settings"),
+      )
+      .finally(() => setLoading(false));
+  }, [setTheme]);
 
   const update = (key: keyof GeneralSettings) => (value: string) =>
     setGeneral((prev) => ({ ...prev, [key]: value }));
 
+  const payload = (): Pick<
+    SettingsState,
+    "general" | "account" | "notifications" | "preferences" | "security"
+  > => ({
+    general: {
+      analysis_type: general.analysisType,
+      currency: general.currency,
+      distance_unit: general.distanceUnit,
+      area_unit: general.areaUnit,
+      date_format: general.dateFormat,
+      time_zone: general.timeZone,
+      theme,
+      compact,
+    },
+    account,
+    notifications,
+    preferences,
+    security,
+  });
+
+  const saveSettings = (message: string) => {
+    updateSettings(payload())
+      .then((saved) => {
+        setSystem(saved.system);
+        setStatistics(saved.statistics);
+        toast.success(message);
+      })
+      .catch((error) =>
+        toast.error(error instanceof Error ? error.message : "Failed to save settings"),
+      );
+  };
+
   const resetAll = () => {
-    setGeneral(defaultGeneralSettings);
-    setCompact(false);
-    setTheme("light");
-    setTab("general");
-    toast.success("All settings reset to default");
+    resetSettings()
+      .then((saved) => {
+        setGeneral({
+          analysisType: saved.general.analysis_type,
+          currency: saved.general.currency,
+          distanceUnit: saved.general.distance_unit,
+          areaUnit: saved.general.area_unit,
+          dateFormat: saved.general.date_format,
+          timeZone: saved.general.time_zone,
+        });
+        setCompact(saved.general.compact);
+        setTheme(saved.general.theme);
+        setAccount(saved.account);
+        setNotifications(saved.notifications);
+        setPreferences(saved.preferences);
+        setSecurity(saved.security);
+        setSystem(saved.system);
+        setStatistics(saved.statistics);
+        setTab("general");
+        toast.success("All settings reset to default");
+      })
+      .catch((error) =>
+        toast.error(error instanceof Error ? error.message : "Failed to reset settings"),
+      );
   };
 
   return (
@@ -182,7 +296,7 @@ function SettingsPage() {
                 title="Display Settings"
                 description="Customize the appearance of the application."
                 footer={
-                  <Button onClick={() => toast.success("Settings saved successfully")}>
+                  <Button onClick={() => saveSettings("Settings saved successfully")}>
                     <Save className="size-4" /> Save Changes
                   </Button>
                 }
@@ -240,18 +354,43 @@ function SettingsPage() {
             </>
           ) : null}
 
-          {tab === "account" ? <AccountTab /> : null}
+          {loading ? <p className="text-helper">Loading settings...</p> : null}
+          {tab === "account" ? (
+            <AccountTab
+              account={account}
+              onChange={(key, value) => setAccount((prev) => ({ ...prev, [key]: value }))}
+              onSave={() => saveSettings("Profile updated")}
+            />
+          ) : null}
           {tab === "data-sources" ? <DataSourcesTab /> : null}
-          {tab === "notifications" ? <NotificationsTab /> : null}
-          {tab === "preferences" ? <PreferencesTab /> : null}
-          {tab === "security" ? <SecurityTab /> : null}
-          {tab === "system" ? <SystemTab /> : null}
+          {tab === "notifications" ? (
+            <NotificationsTab
+              enabled={notifications}
+              onChange={(key, value) => setNotifications((prev) => ({ ...prev, [key]: value }))}
+              onSave={() => saveSettings("Notification preferences saved")}
+            />
+          ) : null}
+          {tab === "preferences" ? (
+            <PreferencesTab
+              preferences={preferences}
+              onChange={(key, value) => setPreferences((prev) => ({ ...prev, [key]: value }))}
+              onSave={() => saveSettings("Default weights saved")}
+            />
+          ) : null}
+          {tab === "security" ? (
+            <SecurityTab
+              security={security}
+              onChange={(key, value) => setSecurity((prev) => ({ ...prev, [key]: value }))}
+              onSave={() => saveSettings("Security settings saved")}
+            />
+          ) : null}
+          {tab === "system" ? <SystemTab system={system} /> : null}
         </div>
 
         <aside className="min-w-0 space-y-4">
-          <AccountOverviewCard />
-          <SystemInformationCard />
-          <DataStorageCard />
+          <AccountOverviewCard account={account} />
+          <SystemInformationCard system={system} />
+          <DataStorageCard statistics={statistics} />
           <DangerZoneCard onResetSettings={resetAll} />
         </aside>
       </div>

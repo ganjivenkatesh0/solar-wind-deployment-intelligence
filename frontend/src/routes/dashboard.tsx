@@ -27,16 +27,10 @@ import { ResourcesTab } from "@/components/dashboard/resources/resources-tab";
 
 import { SiteLocationCard } from "@/components/dashboard/site-location-card";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
-import {
-  createDashboardData,
-  type LatestAnalysisRequest,
-} from "@/lib/dashboard-data";
+import { createDashboardData, type LatestAnalysisRequest } from "@/lib/dashboard-data";
 import { buildDashboardSectionData } from "@/lib/dashboard-section-data";
 import type { AnalysisResponse } from "@/lib/api/analysis";
-import {
-  downloadAnalysisHistoryFile,
-  listAnalysisHistory,
-} from "@/lib/api/analysis-history";
+import { downloadAnalysisHistoryFile, listAnalysisHistory } from "@/lib/api/analysis-history";
 import { saveBlobDownload } from "@/lib/api/client";
 
 export const Route = createFileRoute("/dashboard")({
@@ -67,7 +61,9 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const [data, setData] = useState<ReturnType<typeof createDashboardData> | null>(null);
-  const [sectionData, setSectionData] = useState<ReturnType<typeof buildDashboardSectionData> | null>(null);
+  const [sectionData, setSectionData] = useState<ReturnType<
+    typeof buildDashboardSectionData
+  > | null>(null);
 
   const downloadCurrentReport = async () => {
     try {
@@ -115,9 +111,7 @@ function DashboardPage() {
     } catch (error) {
       setData(null);
       setDataError(
-        error instanceof Error
-          ? error.message
-          : "We couldn't load the latest analysis results."
+        error instanceof Error ? error.message : "We couldn't load the latest analysis results.",
       );
     } finally {
       setLoading(false);
@@ -167,9 +161,7 @@ function DashboardPage() {
           title="No analysis available"
           description="Run a new site analysis to see suitability, energy, feasibility and financial results here."
           action={
-            <Button onClick={() => navigate({ to: "/new-analysis" })}>
-              Start New Analysis
-            </Button>
+            <Button onClick={() => navigate({ to: "/new-analysis" })}>Start New Analysis</Button>
           }
           className="min-h-[360px]"
         />
@@ -185,10 +177,7 @@ function DashboardPage() {
       />
 
       <div className="space-y-4">
-        <SummaryCards
-          site={data.site}
-          onDownload={() => void downloadCurrentReport()}
-        />
+        <SummaryCards site={data.site} onDownload={() => void downloadCurrentReport()} />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <SuitabilityCard data={data.suitability} />
@@ -201,7 +190,10 @@ function DashboardPage() {
           {tab === "overview" ? (
             <div className="space-y-4">
               <div className="grid gap-4 xl:grid-cols-[1.35fr_1.1fr_1.1fr]">
-                <ResourceAssessment data={data.resources} onViewDetails={() => setTab("resources")} />
+                <ResourceAssessment
+                  data={data.resources}
+                  onViewDetails={() => setTab("resources")}
+                />
                 <FeasibilityBreakdown
                   data={data.feasibility}
                   onViewDetails={() => setTab("feasibility")}
@@ -227,37 +219,29 @@ function DashboardPage() {
           ) : tab === "feasibility" ? (
             <FeasibilityTab
               data={sectionData.feasibilityDetails}
-              onExport={notReady("Feasibility report export")}
-              onDownload={() =>
-                toast.success("Report export will be available once the analysis API is connected.")
-              }
+              onExport={() => void downloadCurrentReport()}
+              onDownload={() => void downloadCurrentReport()}
               onViewRecommendations={notReady("Recommendation")}
             />
           ) : tab === "energy" ? (
             <EnergyFinancialTab
               data={sectionData.energyFinancialDetails}
-              onExport={notReady("Financial report export")}
-              onDownload={() =>
-                toast.success("Report export will be available once the analysis API is connected.")
-              }
+              onExport={() => void downloadCurrentReport()}
+              onDownload={() => void downloadCurrentReport()}
             />
           ) : tab === "ai" ? (
             <AiInsightsTab
               data={sectionData.aiInsightsDetails}
-              onExport={notReady("AI insights report export")}
-              onDownload={() =>
-                toast.success("Report export will be available once the analysis API is connected.")
-              }
+              onExport={() => void downloadCurrentReport()}
+              onDownload={() => void downloadCurrentReport()}
               onViewSimilar={notReady("Similar project")}
               onViewReport={notReady("Detailed AI report")}
             />
           ) : tab === "recommendation" ? (
             <RecommendationTab
               data={sectionData.recommendationDetails}
-              onExport={notReady("Recommendation report export")}
-              onDownload={() =>
-                toast.success("Report export will be available once the analysis API is connected.")
-              }
+              onExport={() => void downloadCurrentReport()}
+              onDownload={() => void downloadCurrentReport()}
               onCompareOptions={() => navigate({ to: "/compare-sites" })}
               onViewRiskAnalysis={() => setTab("feasibility")}
               onProceed={() => navigate({ to: "/new-analysis/project-parameters" })}

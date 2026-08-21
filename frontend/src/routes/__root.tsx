@@ -3,6 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  useLocation,
   useRouter,
   HeadContent,
   Scripts,
@@ -14,6 +15,7 @@ import platformLogo from "../../../assets/logo.jpg";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppShell } from "@/components/layout/app-shell";
 import { Toaster } from "@/components/ui/sonner";
+import { getCurrentUser, isAuthError } from "@/lib/api/auth";
 
 function NotFoundComponent() {
   return (
@@ -131,13 +133,33 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+
+  useEffect(() => {
+    if (isAuthPage) {
+      return;
+    }
+
+    getCurrentUser().catch((error) => {
+      if (isAuthError(error)) {
+        window.location.href = "/login";
+      }
+    });
+  }, [isAuthPage, location.pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppShell>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-      </AppShell>
+      {isAuthPage ? (
+        <>
+          <Outlet />
+        </>
+      ) : (
+        <AppShell>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </AppShell>
+      )}
       <Toaster />
     </QueryClientProvider>
   );

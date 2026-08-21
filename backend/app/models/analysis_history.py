@@ -2,8 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import DateTime, Float, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.database import Base
@@ -83,12 +82,12 @@ class AnalysisHistory(Base):
     )
 
     request_data: Mapped[dict] = mapped_column(
-        JSONB,
+        JSON,
         nullable=False,
     )
 
     response_data: Mapped[dict] = mapped_column(
-        JSONB,
+        JSON,
         nullable=False,
     )
 

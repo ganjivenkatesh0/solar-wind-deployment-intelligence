@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Menu, Moon, Sun, Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
 
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/hooks/use-theme";
+import { getCurrentUser, logoutUser } from "@/lib/api/auth";
 import {
   getProfileInitials,
   getSettings,
@@ -22,20 +23,31 @@ import {
 
 export function AppHeader({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   const { theme, toggleTheme } = useTheme();
-  const [profileName, setProfileName] = useState("Ganji Venkatesh");
+  const navigate = useNavigate();
+  const [profileName, setProfileName] = useState("User");
+  const [profileRole, setProfileRole] = useState("Energy Analyst");
   const [notifications, setNotifications] = useState<SettingsState["notifications_feed"]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
-    const applySettings = (settings: SettingsState) => setProfileName(settings.account.name);
-    const handleSettingsUpdated = (event: Event) => {
-      const settings = (event as CustomEvent<SettingsState>).detail;
-      if (settings?.account?.name) applySettings(settings);
+    const applyUser = (user: { name: string; role?: string }) => {
+      setProfileName(user.name || "User");
+      setProfileRole(user.role || "Energy Analyst");
     };
 
-    getSettings()
-      .then(applySettings)
-      .catch(() => undefined);
+    const syncFromSettings = (settings: SettingsState) => {
+      if (settings?.account?.name) {
+        setProfileName(settings.account.name);
+      }
+    };
+
+    const handleSettingsUpdated = (event: Event) => {
+      const settings = (event as CustomEvent<SettingsState>).detail;
+      if (settings?.account?.name) syncFromSettings(settings);
+    };
+
+    getCurrentUser().then(applyUser).catch(() => undefined);
+    getSettings().then(syncFromSettings).catch(() => undefined);
     window.addEventListener(SETTINGS_UPDATED_EVENT, handleSettingsUpdated);
 
     return () => window.removeEventListener(SETTINGS_UPDATED_EVENT, handleSettingsUpdated);
@@ -121,7 +133,7 @@ export function AppHeader({ onOpenSidebar }: { onOpenSidebar: () => void }) {
                 </Avatar>
                 <span className="hidden min-w-0 text-left sm:block">
                   <span className="text-label block truncate">{profileName}</span>
-                  <span className="text-helper block truncate">Energy Analyst</span>
+                  <span className="text-helper block truncate">{profileRole}</span>
                 </span>
                 <ChevronDown className="hidden size-4 text-muted-foreground sm:block" />
               </button>
@@ -140,7 +152,15 @@ export function AppHeader({ onOpenSidebar }: { onOpenSidebar: () => void }) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
+                  try {
+                    await logoutUser();
+                  } finally {
+                    await navigate({ to: "/login" });
+                  }
+                }}
+              >
                 <LogOut className="mr-2 size-4" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

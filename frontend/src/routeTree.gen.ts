@@ -14,8 +14,10 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AnalysisHistoryRouteImport } from './routes/analysis-history'
 import { Route as CompareSitesRouteImport } from './routes/compare-sites'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MapExplorerRouteImport } from './routes/map-explorer'
 import { Route as NewAnalysisRouteImport } from './routes/new-analysis'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as NewAnalysisPreferencesRouteImport } from './routes/new-analysis_.preferences'
@@ -48,6 +50,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MapExplorerRoute = MapExplorerRouteImport.update({
   id: '/map-explorer',
   path: '/map-explorer',
@@ -56,6 +63,11 @@ const MapExplorerRoute = MapExplorerRouteImport.update({
 const NewAnalysisRoute = NewAnalysisRouteImport.update({
   id: '/new-analysis',
   path: '/new-analysis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -96,8 +108,10 @@ export interface FileRoutesByFullPath {
   '/analysis-history': typeof AnalysisHistoryRoute
   '/compare-sites': typeof CompareSitesRoute
   '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/map-explorer': typeof MapExplorerRoute
   '/new-analysis': typeof NewAnalysisRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/new-analysis/preferences': typeof NewAnalysisPreferencesRoute
@@ -111,8 +125,10 @@ export interface FileRoutesByTo {
   '/analysis-history': typeof AnalysisHistoryRoute
   '/compare-sites': typeof CompareSitesRoute
   '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/map-explorer': typeof MapExplorerRoute
   '/new-analysis': typeof NewAnalysisRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/new-analysis/preferences': typeof NewAnalysisPreferencesRoute
@@ -127,8 +143,10 @@ export interface FileRoutesById {
   '/analysis-history': typeof AnalysisHistoryRoute
   '/compare-sites': typeof CompareSitesRoute
   '/dashboard': typeof DashboardRoute
+  '/login': typeof LoginRoute
   '/map-explorer': typeof MapExplorerRoute
   '/new-analysis': typeof NewAnalysisRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/new-analysis_/preferences': typeof NewAnalysisPreferencesRoute
@@ -144,8 +162,10 @@ export interface FileRouteTypes {
     | '/analysis-history'
     | '/compare-sites'
     | '/dashboard'
+    | '/login'
     | '/map-explorer'
     | '/new-analysis'
+    | '/register'
     | '/reports'
     | '/settings'
     | '/new-analysis/preferences'
@@ -159,8 +179,10 @@ export interface FileRouteTypes {
     | '/analysis-history'
     | '/compare-sites'
     | '/dashboard'
+    | '/login'
     | '/map-explorer'
     | '/new-analysis'
+    | '/register'
     | '/reports'
     | '/settings'
     | '/new-analysis/preferences'
@@ -174,8 +196,10 @@ export interface FileRouteTypes {
     | '/analysis-history'
     | '/compare-sites'
     | '/dashboard'
+    | '/login'
     | '/map-explorer'
     | '/new-analysis'
+    | '/register'
     | '/reports'
     | '/settings'
     | '/new-analysis_/preferences'
@@ -190,8 +214,10 @@ export interface RootRouteChildren {
   AnalysisHistoryRoute: typeof AnalysisHistoryRoute
   CompareSitesRoute: typeof CompareSitesRoute
   DashboardRoute: typeof DashboardRoute
+  LoginRoute: typeof LoginRoute
   MapExplorerRoute: typeof MapExplorerRoute
   NewAnalysisRoute: typeof NewAnalysisRoute
+  RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   NewAnalysisPreferencesRoute: typeof NewAnalysisPreferencesRoute
@@ -237,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/map-explorer': {
       id: '/map-explorer'
       path: '/map-explorer'
@@ -249,6 +282,13 @@ declare module '@tanstack/react-router' {
       path: '/new-analysis'
       fullPath: '/new-analysis'
       preLoaderRoute: typeof NewAnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -302,8 +342,10 @@ const rootRouteChildren: RootRouteChildren = {
   AnalysisHistoryRoute: AnalysisHistoryRoute,
   CompareSitesRoute: CompareSitesRoute,
   DashboardRoute: DashboardRoute,
+  LoginRoute: LoginRoute,
   MapExplorerRoute: MapExplorerRoute,
   NewAnalysisRoute: NewAnalysisRoute,
+  RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   NewAnalysisPreferencesRoute: NewAnalysisPreferencesRoute,

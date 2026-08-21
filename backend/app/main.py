@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.analysis import router as analysis_router
 from app.api.analysis_history import router as analysis_history_router
+from app.api.auth import router as auth_router
 from app.api.report_schedules import router as report_schedules_router
 from app.api.settings import router as settings_router
 from app.api.home import router as home_router
@@ -25,6 +26,8 @@ from app.models.feature import Feature
 from app.models.analysis_history import AnalysisHistory
 from app.models.report_schedule import ReportSchedule
 from app.models.settings import Settings
+from app.models.user import User
+from app.models.session import SessionRecord
 
 AnalysisHistory.__table__.create(bind=engine, checkfirst=True)
 Base.metadata.create_all(bind=engine)
@@ -63,6 +66,7 @@ app.include_router(feature_router)
 app.include_router(solar.router)
 app.include_router(deployment.router)
 app.include_router(optimization.router)
+app.include_router(auth_router)
 app.include_router(analysis_router)
 app.include_router(analysis_history_router)
 app.include_router(report_schedules_router)
